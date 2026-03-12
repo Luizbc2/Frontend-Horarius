@@ -1,6 +1,18 @@
 import { Check, X } from "lucide-react";
-import { Button } from "../components/ui/button";
 import { useState } from "react";
+
+import { MetricCard, PageShell, SectionCard } from "../components/PageShell";
+import { Button } from "../components/ui/button";
+import { cn } from "../components/ui/utils";
+
+type Plan = {
+  name: string;
+  monthlyPrice: string;
+  annualPrice: string;
+  description: string;
+  popular?: boolean;
+  features: Array<{ text: string; included: boolean }>;
+};
 
 const plans = [
   {
@@ -49,146 +61,168 @@ const plans = [
       { text: "Múltiplas unidades", included: true },
     ],
   },
-];
+] satisfies Plan[];
 
 export function Assinatura() {
   const [billingPeriod, setBillingPeriod] = useState<"monthly" | "annual">("monthly");
 
   return (
-    <div className="p-6 lg:p-8">
-      {/* Header */}
-      <div className="mb-6">
-        <p className="text-sm text-gray-600 mb-2">CRESCIMENTO &gt; ASSINATURA</p>
-        <p className="text-xs text-gray-500">
-          Cmd/Ctrl + B alterna a navegação
-        </p>
+    <PageShell
+      eyebrow="Crescimento"
+      title="Planos e assinatura"
+      description="Apresente a oferta com mais clareza, destaque o plano ideal para cada momento do negocio e deixe a comparacao mais elegante."
+      actions={<span className="data-pill">14 dias de teste gratis</span>}
+    >
+      <div className="metric-grid">
+        <MetricCard
+          label="Planos disponiveis"
+          value={String(plans.length)}
+          helper="Estrutura pronta para escalar o negocio"
+          accent="default"
+        />
+        <MetricCard
+          label="Economia anual"
+          value="17%"
+          helper="Desconto visivel para incentivar permanencia"
+          accent="sand"
+        />
+        <MetricCard
+          label="Periodo de teste"
+          value="14 dias"
+          helper="Entrada leve para novos assinantes"
+          accent="coral"
+        />
       </div>
 
-      {/* Billing Toggle */}
-      <div className="flex justify-center mb-8">
-        <div className="inline-flex bg-white rounded-lg shadow-sm p-1">
-          <button
-            onClick={() => setBillingPeriod("monthly")}
-            className={`px-6 py-2 rounded-md text-sm transition-colors ${
-              billingPeriod === "monthly"
-                ? "bg-[#4a9d9d] text-white"
-                : "text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            Mensal
-          </button>
-          <button
-            onClick={() => setBillingPeriod("annual")}
-            className={`px-6 py-2 rounded-md text-sm transition-colors ${
-              billingPeriod === "annual"
-                ? "bg-[#4a9d9d] text-white"
-                : "text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            Anual
-            <span className="ml-2 text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full">
-              -17%
-            </span>
-          </button>
-        </div>
-      </div>
-
-      {/* Plans Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-        {plans.map((plan) => (
-          <div
-            key={plan.name}
-            className={`bg-white rounded-lg shadow-sm overflow-hidden ${
-              plan.popular ? "ring-2 ring-[#4a9d9d]" : ""
-            }`}
-          >
-            {/* Header */}
-            <div className="p-6 border-b border-gray-200">
-              {plan.popular && (
-                <div className="mb-2">
-                  <span className="px-3 py-1 bg-[#4a9d9d] text-white rounded-full text-xs">
-                    Mais Popular
-                  </span>
-                </div>
+      <SectionCard
+        title="Escolha o ritmo de cobranca"
+        description="Alterne entre mensal e anual para mostrar o valor percebido de cada plano sem poluir a leitura da pagina."
+        action={
+          <div className="inline-flex rounded-[1.1rem] border border-white/70 bg-white/70 p-1 shadow-[0_18px_45px_-28px_rgba(73,47,22,0.24)]">
+            <button
+              type="button"
+              onClick={() => setBillingPeriod("monthly")}
+              className={cn(
+                "rounded-[0.9rem] px-4 py-2 text-sm font-semibold transition-colors",
+                billingPeriod === "monthly"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground",
               )}
-              <h3 className="text-2xl mb-2">{plan.name}</h3>
-              <p className="text-sm text-gray-600 mb-4">{plan.description}</p>
-              <div className="mb-4">
-                <span className="text-4xl">
-                  {billingPeriod === "monthly" ? plan.monthlyPrice : plan.annualPrice}
-                </span>
-                <span className="text-gray-600 ml-2">
-                  /{billingPeriod === "monthly" ? "mês" : "ano"}
-                </span>
-              </div>
-              <Button
-                className={`w-full ${
-                  plan.popular
-                    ? "bg-[#4a9d9d] hover:bg-[#3d8585] text-white"
-                    : "bg-gray-100 hover:bg-gray-200 text-gray-900"
-                }`}
-              >
-                Escolher Plano
-              </Button>
-            </div>
-
-            {/* Features */}
-            <div className="p-6">
-              <ul className="space-y-3">
-                {plan.features.map((feature, index) => (
-                  <li key={index} className="flex items-start gap-3">
-                    {feature.included ? (
-                      <Check className="h-5 w-5 text-[#4a9d9d] flex-shrink-0 mt-0.5" />
-                    ) : (
-                      <X className="h-5 w-5 text-gray-300 flex-shrink-0 mt-0.5" />
-                    )}
-                    <span
-                      className={`text-sm ${
-                        feature.included ? "text-gray-900" : "text-gray-400"
-                      }`}
-                    >
-                      {feature.text}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            >
+              Mensal
+            </button>
+            <button
+              type="button"
+              onClick={() => setBillingPeriod("annual")}
+              className={cn(
+                "rounded-[0.9rem] px-4 py-2 text-sm font-semibold transition-colors",
+                billingPeriod === "annual"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              Anual
+            </button>
           </div>
-        ))}
-      </div>
+        }
+      >
+        <div className="grid gap-4 xl:grid-cols-3">
+          {plans.map((plan) => (
+            <article
+              key={plan.name}
+              className={cn(
+                "relative overflow-hidden rounded-[1.7rem] border p-6 shadow-[0_24px_58px_-36px_rgba(73,47,22,0.34)] transition-transform duration-300 hover:-translate-y-1",
+                plan.popular
+                  ? "border-primary/25 bg-[linear-gradient(180deg,rgba(255,255,255,0.88),rgba(233,247,245,0.78))]"
+                  : "border-white/70 bg-white/64",
+              )}
+            >
+              {plan.popular ? (
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <span className="soft-badge">Mais popular</span>
+                  {billingPeriod === "annual" ? (
+                    <span className="soft-badge" data-variant="warm">
+                      -17% anual
+                    </span>
+                  ) : null}
+                </div>
+              ) : null}
 
-      {/* FAQ or Additional Info */}
-      <div className="mt-12 max-w-3xl mx-auto">
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h3 className="text-lg mb-4">Perguntas Frequentes</h3>
-          <div className="space-y-4 text-sm text-gray-600">
-            <div>
-              <p className="mb-2">
-                <strong>Posso mudar de plano a qualquer momento?</strong>
-              </p>
-              <p>
-                Sim, você pode fazer upgrade ou downgrade do seu plano a qualquer momento.
-              </p>
-            </div>
-            <div>
-              <p className="mb-2">
-                <strong>Como funciona o período de teste?</strong>
-              </p>
-              <p>
-                Todos os planos incluem 14 dias de teste grátis, sem necessidade de cartão de crédito.
-              </p>
-            </div>
-            <div>
-              <p className="mb-2">
-                <strong>Posso cancelar a qualquer momento?</strong>
-              </p>
-              <p>
-                Sim, você pode cancelar sua assinatura a qualquer momento sem multas.
-              </p>
-            </div>
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-3xl text-foreground">{plan.name}</h3>
+                  <p className="mt-2 text-sm leading-7 text-muted-foreground">
+                    {plan.description}
+                  </p>
+                </div>
+
+                <div>
+                  <div className="flex items-end gap-2">
+                    <span className="text-5xl tracking-[-0.05em] text-foreground">
+                      {billingPeriod === "monthly" ? plan.monthlyPrice : plan.annualPrice}
+                    </span>
+                    <span className="pb-1 text-sm uppercase tracking-[0.2em] text-muted-foreground">
+                      /{billingPeriod === "monthly" ? "mes" : "ano"}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {billingPeriod === "monthly"
+                      ? "Pagamento flexivel, ideal para comecar."
+                      : "Melhor custo para manter o crescimento previsivel."}
+                  </p>
+                </div>
+
+                <Button variant={plan.popular ? "default" : "outline"} className="w-full">
+                  Escolher plano
+                </Button>
+              </div>
+
+              <div className="mt-6 border-t border-[rgba(74,52,34,0.08)] pt-5">
+                <ul className="space-y-3">
+                  {plan.features.map((feature) => (
+                    <li key={feature.text} className="flex items-start gap-3 text-sm">
+                      {feature.included ? (
+                        <Check className="mt-0.5 h-4.5 w-4.5 flex-shrink-0 text-primary" />
+                      ) : (
+                        <X className="mt-0.5 h-4.5 w-4.5 flex-shrink-0 text-muted-foreground/55" />
+                      )}
+                      <span className={feature.included ? "text-foreground" : "text-muted-foreground"}>
+                        {feature.text}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </article>
+          ))}
+        </div>
+      </SectionCard>
+
+      <SectionCard
+        title="Perguntas frequentes"
+        description="Respostas diretas deixam a decisao de compra mais leve e evitam atrito antes da assinatura."
+      >
+        <div className="grid gap-3">
+          <div className="rounded-[1.4rem] border border-white/70 bg-white/60 p-5">
+            <h3 className="text-lg text-foreground">Posso mudar de plano a qualquer momento?</h3>
+            <p className="mt-2 text-sm leading-7 text-muted-foreground">
+              Sim. Upgrade e downgrade podem ser feitos sempre que sua operacao pedir outra estrutura.
+            </p>
+          </div>
+          <div className="rounded-[1.4rem] border border-white/70 bg-white/60 p-5">
+            <h3 className="text-lg text-foreground">Como funciona o periodo de teste?</h3>
+            <p className="mt-2 text-sm leading-7 text-muted-foreground">
+              Todos os planos comecam com 14 dias gratis, sem necessidade de cartao para testar o fluxo principal.
+            </p>
+          </div>
+          <div className="rounded-[1.4rem] border border-white/70 bg-white/60 p-5">
+            <h3 className="text-lg text-foreground">Posso cancelar a qualquer momento?</h3>
+            <p className="mt-2 text-sm leading-7 text-muted-foreground">
+              Sim. O cancelamento pode ser feito a qualquer momento, sem multa contratual.
+            </p>
           </div>
         </div>
-      </div>
-    </div>
+      </SectionCard>
+    </PageShell>
   );
 }
