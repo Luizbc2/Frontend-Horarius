@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation, useNavigate } from "react-router";
-import { useState } from "react";
+import { useState, type Dispatch, type SetStateAction } from "react";
 import {
   CalendarDays,
   ChevronDown,
@@ -58,28 +58,27 @@ const navigationGroups: Array<{ title: string; items: NavigationItem[] }> = [
   },
 ];
 
-export function Layout() {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const currentPath = location.pathname === "/" ? "/agenda/timeline" : location.pathname;
-  const [agendaExpanded, setAgendaExpanded] = useState(currentPath.startsWith("/agenda/"));
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const agendaOpen = agendaExpanded || currentPath.startsWith("/agenda/");
-  const workspaceDate = new Intl.DateTimeFormat("pt-BR", {
-    day: "2-digit",
-    month: "long",
-  }).format(new Date());
+type SidebarContentProps = {
+  agendaExpanded: boolean;
+  setAgendaExpanded: Dispatch<SetStateAction<boolean>>;
+  agendaOpen: boolean;
+  currentPath: string;
+  workspaceDate: string;
+  closeSidebar: () => void;
+  handleLogout: () => void;
+};
 
+function SidebarContent({
+  agendaExpanded,
+  setAgendaExpanded,
+  agendaOpen,
+  currentPath,
+  workspaceDate,
+  closeSidebar,
+  handleLogout,
+}: SidebarContentProps) {
   const isActive = (path: string) => {
     return currentPath === path;
-  };
-
-  const handleLogout = () => {
-    navigate("/");
-  };
-
-  const closeSidebar = () => {
-    setSidebarOpen(false);
   };
 
   const renderNavigationItem = (item: NavigationItem) => {
@@ -144,7 +143,7 @@ export function Layout() {
     );
   };
 
-  const SidebarContent = () => (
+  return (
     <div className="relative flex h-full flex-col overflow-hidden px-5 py-6 text-sidebar-foreground">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-56 bg-[radial-gradient(circle_at_top,rgba(89,184,171,0.28),transparent_60%)]" />
       <div className="pointer-events-none absolute bottom-0 right-0 h-44 w-44 rounded-full bg-[radial-gradient(circle,rgba(211,140,86,0.16),transparent_72%)] blur-3xl" />
@@ -259,6 +258,27 @@ export function Layout() {
       </div>
     </div>
   );
+}
+
+export function Layout() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const currentPath = location.pathname === "/" ? "/agenda/timeline" : location.pathname;
+  const [agendaExpanded, setAgendaExpanded] = useState(currentPath.startsWith("/agenda/"));
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const agendaOpen = agendaExpanded || currentPath.startsWith("/agenda/");
+  const workspaceDate = new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "long",
+  }).format(new Date());
+
+  const handleLogout = () => {
+    navigate("/");
+  };
+
+  const closeSidebar = () => {
+    setSidebarOpen(false);
+  };
 
   return (
     <div className="relative flex min-h-screen bg-transparent lg:p-4">
@@ -266,7 +286,15 @@ export function Layout() {
 
       <aside className="hidden lg:block lg:w-[18.5rem] xl:w-[19.5rem]">
         <div className="sticky top-4 h-[calc(100vh-2rem)] rounded-[2rem] border border-sidebar-border bg-[linear-gradient(180deg,rgba(12,15,17,0.98),rgba(18,24,28,0.94))] shadow-[0_40px_120px_-56px_rgba(0,0,0,0.95)]">
-          <SidebarContent />
+          <SidebarContent
+            agendaExpanded={agendaExpanded}
+            setAgendaExpanded={setAgendaExpanded}
+            agendaOpen={agendaOpen}
+            currentPath={currentPath}
+            workspaceDate={workspaceDate}
+            closeSidebar={closeSidebar}
+            handleLogout={handleLogout}
+          />
         </div>
       </aside>
 
@@ -277,7 +305,15 @@ export function Layout() {
             onClick={() => setSidebarOpen(false)}
           />
           <aside className="fixed inset-y-3 left-3 z-50 w-[min(21rem,calc(100vw-1.5rem))] rounded-[2rem] border border-sidebar-border bg-[linear-gradient(180deg,rgba(12,15,17,0.98),rgba(18,24,28,0.94))] shadow-[0_40px_120px_-56px_rgba(0,0,0,0.95)] lg:hidden">
-            <SidebarContent />
+            <SidebarContent
+              agendaExpanded={agendaExpanded}
+              setAgendaExpanded={setAgendaExpanded}
+              agendaOpen={agendaOpen}
+              currentPath={currentPath}
+              workspaceDate={workspaceDate}
+              closeSidebar={closeSidebar}
+              handleLogout={handleLogout}
+            />
           </aside>
         </>
       )}
