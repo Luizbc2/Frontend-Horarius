@@ -1,46 +1,65 @@
-import { Search, Calendar } from "lucide-react";
+import { Calendar, Search, Shapes, Users } from "lucide-react";
+
+import { EmptyStatePanel, MetricCard, PageShell, SectionCard } from "../components/PageShell";
 import { Input } from "../components/ui/input";
 
+type ClientPlan = {
+  id: number;
+  client: string;
+  plan: string;
+  renewalDate: string;
+};
+
 export function PlanosClientes() {
-  const plans: any[] = [];
+  const plans: ClientPlan[] = [];
 
   return (
-    <div className="p-6 lg:p-8">
-      {/* Header */}
-      <div className="mb-6">
-        <p className="text-sm text-gray-600 mb-2">GESTÃO &gt; PLANOS DE CLIENTES</p>
-        <p className="text-xs text-gray-500">
-          Cmd/Ctrl + B alterna a navegação
-        </p>
+    <PageShell
+      eyebrow="Gestao"
+      title="Planos recorrentes de clientes"
+      description="Deixe a area de recorrencia mais elegante para acompanhar renovacoes, volume mensal e oportunidades de fidelizacao."
+    >
+      <div className="metric-grid">
+        <MetricCard
+          label="Planos ativos"
+          value="0"
+          helper="Nenhum contrato recorrente no momento"
+          icon={<Shapes className="h-5 w-5" />}
+        />
+        <MetricCard
+          label="Clientes recorrentes"
+          value="0"
+          helper="Base fidelizada por assinatura"
+          icon={<Users className="h-5 w-5" />}
+          accent="sand"
+        />
+        <MetricCard
+          label="Proxima renovacao"
+          value="--"
+          helper="Aparece assim que o primeiro plano entrar em vigor"
+          icon={<Calendar className="h-5 w-5" />}
+          accent="coral"
+        />
       </div>
 
-      {/* Search */}
-      <div className="mb-6">
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input
-            placeholder="Buscar planos..."
-            className="pl-10"
-          />
-        </div>
-      </div>
-
-      {/* Plans List or Empty State */}
-      {plans.length === 0 ? (
-        <div className="bg-white rounded-lg shadow-sm p-12 text-center">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Calendar className="h-8 w-8 text-gray-400" />
+      <SectionCard
+        title="Busca e acompanhamento"
+        description="Procure um cliente ou nome de plano para acompanhar recorrencias sem abrir varias telas."
+        action={
+          <div className="relative w-full max-w-sm">
+            <Search className="pointer-events-none absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input placeholder="Buscar planos" className="pl-11" />
           </div>
-          <h3 className="text-lg mb-2">Nenhum plano recorrente</h3>
-          <p className="text-gray-500">
-            Quando você criar planos recorrentes para clientes, eles aparecerão aqui.
-          </p>
-        </div>
-      ) : (
-        <div className="bg-white rounded-lg shadow-sm">
-          {/* Plans would be listed here */}
-        </div>
-      )}
-    </div>
+        }
+      >
+        {plans.length === 0 ? (
+          <EmptyStatePanel
+            icon={<Calendar className="h-7 w-7" />}
+            title="Nenhum plano recorrente"
+            description="Quando voce estruturar pacotes recorrentes para clientes, esta area vai mostrar renovacoes, volume contratado e historico de permanencia."
+          />
+        ) : null}
+      </SectionCard>
+    </PageShell>
   );
 }

@@ -1,6 +1,16 @@
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, RefreshCw, Filter } from "lucide-react";
+import { Link } from "react-router";
+import {
+  CalendarCheck2,
+  ChevronLeft,
+  ChevronRight,
+  Clock3,
+  RefreshCw,
+  Users,
+} from "lucide-react";
+
 import { Button } from "../components/ui/button";
+import { MetricCard, PageShell, SectionCard } from "../components/PageShell";
 import {
   Select,
   SelectContent,
@@ -8,6 +18,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../components/ui/select";
+import { cn } from "../components/ui/utils";
+
+type AppointmentStatus = "confirmado" | "pendente" | "cancelado";
+
+type Appointment = {
+  id: number;
+  time: string;
+  client: string;
+  service: string;
+  professional: string;
+  status: AppointmentStatus;
+  duration: number;
+};
 
 const timeSlots = [
   "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
@@ -35,19 +58,60 @@ const appointments = [
     status: "pendente",
     duration: 1
   }
-];
+] satisfies Appointment[];
+
+const statusStyles: Record<
+  AppointmentStatus,
+  { card: string; badge: string; label: string }
+> = {
+  confirmado: {
+    card: "border-emerald-200/80 bg-emerald-50/85",
+    badge: "soft-badge",
+    label: "Confirmado",
+  },
+  pendente: {
+    card: "border-amber-200/80 bg-amber-50/90",
+    badge: "soft-badge",
+    label: "Pendente",
+  },
+  cancelado: {
+    card: "border-rose-200/80 bg-rose-50/85",
+    badge: "soft-badge",
+    label: "Cancelado",
+  },
+};
 
 export function AgendaTimeline() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedProfessional, setSelectedProfessional] = useState("todos");
   const [selectedStatus, setSelectedStatus] = useState("todos");
 
+  const filteredAppointments = appointments.filter((appointment) => {
+    if (
+      selectedProfessional !== "todos" &&
+      appointment.professional.toLowerCase() !== selectedProfessional
+    ) {
+      return false;
+    }
+
+    if (selectedStatus !== "todos" && appointment.status !== selectedStatus) {
+      return false;
+    }
+
+    return true;
+  });
+
+  const appointmentMap = new Map(filteredAppointments.map((appointment) => [appointment.time, appointment]));
+  const confirmedCount = filteredAppointments.filter((appointment) => appointment.status === "confirmado").length;
+  const pendingCount = filteredAppointments.filter((appointment) => appointment.status === "pendente").length;
+  const occupancy = Math.round((filteredAppointments.length / timeSlots.length) * 100);
+
   const formatDate = (date: Date) => {
     return date.toLocaleDateString("pt-BR", {
       weekday: "long",
       day: "2-digit",
       month: "long"
-    }).toUpperCase();
+    });
   };
 
   const previousDay = () => {
@@ -67,55 +131,70 @@ export function AgendaTimeline() {
   };
 
   return (
-    <div className="p-6 lg:p-8">
-      {/* Header */}
-      <div className="mb-6">
-        <p className="text-sm text-gray-600 mb-2">
-          GESTÃO DIÁRIA &gt; {formatDate(selectedDate)}
-        </p>
-        <p className="text-xs text-gray-500">
-          Cmd/Ctrl + B alterna a navegação
-        </p>
+    <PageShell
+      eyebrow="Gestao diaria"
+      title="Agenda do dia"
+      description="Acompanhe a ocupacao da equipe em uma linha do tempo limpa, com filtros rapidos e leitura facil dos status de atendimento."
+      actions={
+        <>
+          <Button variant="outline">
+            <RefreshCw className="h-4 w-4" />
+            Atualizar
+          </Button>
+          <Button variant="secondary" asChild>
+            <Link to="/agenda/lista">Ver lista completa</Link>
+          </Button>
+        </>
+      }
+    >
+      <div className="metric-grid">
+        <MetricCard
+          label="Atendimentos do dia"
+          value={String(filteredAppointments.length)}
+          helper="Slots preenchidos na agenda atual"
+          icon={<CalendarCheck2 className="h-5 w-5" />}
+        />
+        <MetricCard
+          label="Confirmados"
+          value={String(confirmedCount)}
+          helper="Clientes prontos para atendimento"
+          icon={<Users className="h-5 w-5" />}
+          accent="sand"
+        />
+        <MetricCard
+          label="Ocupacao"
+          value={`${occupancy}%`}
+          helper={`${pendingCount} pendente${pendingCount === 1 ? "" : "s"} para confirmar`}
+          icon={<Clock3 className="h-5 w-5" />}
+          accent="coral"
+        />
       </div>
 
-      {/* Controls */}
-      <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
-        <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
-          {/* Date Navigation */}
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={previousDay}
-              className="h-9 w-9"
-            >
+      <SectionCard
+        title="Controle do dia"
+        description="Navegue entre as datas, filtre por profissional e visualize apenas o que importa para a operacao de hoje."
+        action={<span className="data-pill capitalize">{formatDate(selectedDate)}</span>}
+      >
+        <div className="grid gap-4 xl:grid-cols-[1.35fr,1fr]">
+          <div className="flex flex-wrap items-center gap-3">
+            <Button variant="outline" size="icon" onClick={previousDay}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <Button
-              variant="outline"
-              onClick={today}
-              className="min-w-[100px]"
-            >
+            <Button variant="outline" onClick={today}>
               Hoje
             </Button>
-            <span className="px-4 py-2 bg-gray-50 rounded min-w-[200px] text-center text-sm">
+            <div className="data-pill min-w-[220px] justify-center text-center font-medium">
               {selectedDate.toLocaleDateString("pt-BR")}
-            </span>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={nextDay}
-              className="h-9 w-9"
-            >
+            </div>
+            <Button variant="outline" size="icon" onClick={nextDay}>
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
 
-          {/* Filters */}
-          <div className="flex flex-wrap gap-2">
+          <div className="grid gap-3 sm:grid-cols-3">
             <Select value={selectedProfessional} onValueChange={setSelectedProfessional}>
-              <SelectTrigger className="w-[150px]">
-                <SelectValue />
+              <SelectTrigger>
+                <SelectValue placeholder="Profissional" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="todos">Todos</SelectItem>
@@ -124,75 +203,98 @@ export function AgendaTimeline() {
             </Select>
 
             <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-              <SelectTrigger className="w-[150px]">
-                <SelectValue />
+              <SelectTrigger>
+                <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="todos">Todos Status</SelectItem>
+                <SelectItem value="todos">Todos status</SelectItem>
                 <SelectItem value="confirmado">Confirmado</SelectItem>
                 <SelectItem value="pendente">Pendente</SelectItem>
                 <SelectItem value="cancelado">Cancelado</SelectItem>
               </SelectContent>
             </Select>
 
-            <Button variant="outline" size="icon">
+            <Button variant="outline" className="w-full">
               <RefreshCw className="h-4 w-4" />
+              Sincronizar
             </Button>
           </div>
         </div>
-      </div>
+      </SectionCard>
 
-      {/* Timeline Grid */}
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <div className="min-w-[600px]">
-            {/* Header */}
-            <div className="grid grid-cols-[100px_1fr] border-b border-gray-200 bg-gray-50">
-              <div className="p-4 border-r border-gray-200">
-                <p className="text-sm">Horário</p>
+      <SectionCard
+        title="Grade da agenda"
+        description="Uma visao linear dos horarios ajuda a encontrar janelas livres e reagendar com rapidez sem perder o contexto do dia."
+      >
+        <div className="overflow-hidden rounded-[1.5rem] border border-white/70 bg-white/52 shadow-[0_24px_55px_-34px_rgba(73,47,22,0.28)]">
+          <div className="overflow-x-auto">
+            <div className="min-w-[680px]">
+              <div className="grid grid-cols-[110px_1fr] border-b border-[rgba(74,52,34,0.08)] bg-white/55">
+                <div className="px-5 py-4">
+                  <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+                    Horario
+                  </p>
+                </div>
+                <div className="px-5 py-4">
+                  <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+                    Profissional
+                  </p>
+                  <p className="mt-2 text-lg text-foreground">Fodedor</p>
+                </div>
               </div>
-              <div className="p-4">
-                <p className="text-sm">Fodedor</p>
-              </div>
-            </div>
 
-            {/* Time Slots */}
-            <div className="divide-y divide-gray-200">
-              {timeSlots.map((time) => {
-                const appointment = appointments.find(apt => apt.time === time);
-                
-                return (
-                  <div key={time} className="grid grid-cols-[100px_1fr] hover:bg-gray-50 transition-colors">
-                    <div className="p-4 border-r border-gray-200">
-                      <p className="text-sm text-gray-600">{time}</p>
+              <div>
+                {timeSlots.map((time) => {
+                  const appointment = appointmentMap.get(time);
+
+                  return (
+                    <div
+                      key={time}
+                      className="grid grid-cols-[110px_1fr] border-b border-[rgba(74,52,34,0.08)] last:border-b-0"
+                    >
+                      <div className="flex items-start px-5 py-5 text-sm font-medium text-muted-foreground">
+                        {time}
+                      </div>
+                      <div className="px-4 py-3">
+                        {appointment ? (
+                          <div
+                            className={cn(
+                              "rounded-[1.25rem] border px-4 py-4 shadow-[0_18px_45px_-32px_rgba(73,47,22,0.45)]",
+                              statusStyles[appointment.status].card,
+                            )}
+                          >
+                            <div className="flex flex-wrap items-start justify-between gap-3">
+                              <div>
+                                <p className="text-base font-semibold text-foreground">
+                                  {appointment.client}
+                                </p>
+                                <p className="mt-1 text-sm text-muted-foreground">
+                                  {appointment.service}
+                                </p>
+                                <p className="mt-2 text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                                  {appointment.duration * 30} min com {appointment.professional}
+                                </p>
+                              </div>
+                              <span className={statusStyles[appointment.status].badge}>
+                                <span className="status-dot" />
+                                {statusStyles[appointment.status].label}
+                              </span>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex min-h-[86px] items-center rounded-[1.2rem] border border-dashed border-[rgba(74,52,34,0.12)] px-4 text-sm text-muted-foreground">
+                            Horario livre para encaixe ou pausa tecnica.
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <div className="p-2">
-                      {appointment ? (
-                        <div className={`p-3 rounded-lg ${
-                          appointment.status === "confirmado" 
-                            ? "bg-green-100 border border-green-300" 
-                            : "bg-yellow-100 border border-yellow-300"
-                        }`}>
-                          <p className="text-sm mb-1">
-                            <span className="inline-block w-2 h-2 rounded-full bg-[#4a9d9d] mr-2"></span>
-                            {appointment.client}
-                          </p>
-                          <p className="text-xs text-gray-600">{appointment.service}</p>
-                          <p className="text-xs text-gray-500 mt-1">
-                            {appointment.status === "confirmado" ? "Confirmado" : "Pendente"}
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="h-full min-h-[60px]"></div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      </SectionCard>
+    </PageShell>
   );
 }

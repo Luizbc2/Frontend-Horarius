@@ -1,11 +1,23 @@
-import { Plus, Edit, Clock, Ban, Trash2 } from "lucide-react";
+import { Ban, Clock3, Edit, Phone, Plus, ShieldCheck, Trash2, Users } from "lucide-react";
+
+import { MetricCard, PageShell, SectionCard } from "../components/PageShell";
 import { Button } from "../components/ui/button";
+
+type Professional = {
+  id: number;
+  name: string;
+  avatar: string;
+  specialties: string[];
+  phone: string;
+  status: "ativo" | "inativo";
+};
 
 const stats = [
   { label: "Profissionais", value: "1" },
   { label: "Em Atividade", value: "1" },
   { label: "Google Conectado", value: "Off", isToggle: true },
 ];
+
 
 const professionals = [
   {
@@ -16,120 +28,121 @@ const professionals = [
     phone: "(11) 98765-4321",
     status: "ativo",
   },
-];
+] satisfies Professional[];
 
 export function Profissionais() {
+  const activeProfessionals = professionals.filter((professional) => professional.status === "ativo").length;
+
   return (
-    <div className="p-6 lg:p-8">
-      {/* Header */}
-      <div className="mb-6">
-        <p className="text-sm text-gray-600 mb-2">GESTÃO &gt; PROFISSIONAIS</p>
-        <p className="text-xs text-gray-500">
-          Cmd/Ctrl + B alterna a navegação
-        </p>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        {stats.map((stat) => (
-          <div key={stat.label} className="bg-white rounded-lg shadow-sm p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-2">{stat.label}</p>
-                <p className="text-3xl">{stat.value}</p>
-              </div>
-              {stat.isToggle && (
-                <div className="w-12 h-6 bg-gray-300 rounded-full relative cursor-pointer">
-                  <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full"></div>
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* New Professional Button */}
-      <div className="mb-6">
-        <Button className="bg-[#4a9d9d] hover:bg-[#3d8585] text-white">
-          <Plus className="h-4 w-4 mr-2" />
-          Novo Profissional
+    <PageShell
+      eyebrow="Gestao"
+      title="Equipe e disponibilidade"
+      description="Organize os profissionais da casa com uma apresentacao mais clara das especialidades, disponibilidade e atalhos operacionais."
+      actions={
+        <Button>
+          <Plus className="h-4 w-4" />
+          Novo profissional
         </Button>
+      }
+    >
+      <div className="metric-grid">
+        <MetricCard
+          label="Profissionais"
+          value={String(professionals.length)}
+          helper="Pessoas cadastradas na equipe"
+          icon={<Users className="h-5 w-5" />}
+        />
+        <MetricCard
+          label="Em atividade"
+          value={String(activeProfessionals)}
+          helper="Disponiveis para agendamento"
+          icon={<ShieldCheck className="h-5 w-5" />}
+          accent="sand"
+        />
+        <MetricCard
+          label="Google conectado"
+          value="Off"
+          helper="Ative para sincronizar horarios externos"
+          icon={<Clock3 className="h-5 w-5" />}
+          accent="coral"
+        />
       </div>
 
-      {/* Professionals List */}
-      <div className="space-y-4">
-        {professionals.map((professional) => (
-          <div key={professional.id} className="bg-white rounded-lg shadow-sm p-6">
-            <div className="flex flex-col lg:flex-row gap-6">
-              {/* Avatar and Basic Info */}
-              <div className="flex items-start gap-4 flex-1">
-                <div className="w-16 h-16 bg-[#4a9d9d] rounded-full flex items-center justify-center text-white text-2xl flex-shrink-0">
-                  {professional.avatar}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-xl mb-2">{professional.name}</h3>
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    {professional.specialties.map((specialty) => (
-                      <span
-                        key={specialty}
-                        className="px-3 py-1 bg-[#e8f4f4] text-[#4a9d9d] rounded-full text-sm"
-                      >
-                        {specialty}
+      <SectionCard
+        title="Equipe cadastrada"
+        description="Cada card concentra as informacoes essenciais para editar cadastro, revisar agenda e aplicar bloqueios rapidamente."
+      >
+        {professionals.length > 0 ? (
+          <div className="grid gap-4">
+            {professionals.map((professional) => (
+              <article
+                key={professional.id}
+                className="grid gap-5 rounded-[1.6rem] border border-white/70 bg-white/64 p-5 shadow-[0_22px_52px_-34px_rgba(73,47,22,0.34)] lg:grid-cols-[minmax(0,1fr)_15rem]"
+              >
+                <div className="flex flex-col gap-5 md:flex-row md:items-start">
+                  <div className="flex h-18 w-18 items-center justify-center rounded-[1.5rem] bg-[linear-gradient(135deg,rgba(31,109,104,0.95),rgba(53,92,125,0.88))] text-3xl text-white shadow-[0_24px_48px_-26px_rgba(31,109,104,0.8)]">
+                    {professional.avatar}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+                      <div>
+                        <h3 className="text-2xl text-foreground">{professional.name}</h3>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {professional.specialties.map((specialty) => (
+                            <span key={specialty} className="soft-badge" data-variant="warm">
+                              {specialty}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      <span className="soft-badge">
+                        <span className="status-dot" />
+                        {professional.status === "ativo" ? "Ativo" : "Inativo"}
                       </span>
-                    ))}
-                  </div>
-                  <p className="text-sm text-gray-600">{professional.phone}</p>
-                  <div className="mt-2">
-                    <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs">
-                      Ativo
-                    </span>
+                    </div>
+
+                    <div className="mt-5 grid gap-3 md:grid-cols-2">
+                      <div className="data-pill justify-between">
+                        <span className="flex items-center gap-2 text-muted-foreground">
+                          <Phone className="h-4 w-4" />
+                          Contato
+                        </span>
+                        <span className="text-sm font-medium text-foreground">{professional.phone}</span>
+                      </div>
+                      <div className="data-pill justify-between">
+                        <span className="flex items-center gap-2 text-muted-foreground">
+                          <Clock3 className="h-4 w-4" />
+                          Agenda
+                        </span>
+                        <span className="text-sm font-medium text-foreground">Disponivel</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Actions */}
-              <div className="flex flex-col gap-2 lg:w-48">
-                <Button variant="outline" className="w-full justify-start">
-                  <Edit className="h-4 w-4 mr-2" />
-                  Editar
-                </Button>
-                <Button variant="outline" className="w-full justify-start">
-                  <Clock className="h-4 w-4 mr-2" />
-                  Horários
-                </Button>
-                <Button variant="outline" className="w-full justify-start">
-                  <Ban className="h-4 w-4 mr-2" />
-                  Bloqueios
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Remover
-                </Button>
-              </div>
-            </div>
+                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
+                  <Button variant="outline" className="justify-start">
+                    <Edit className="h-4 w-4" />
+                    Editar
+                  </Button>
+                  <Button variant="outline" className="justify-start">
+                    <Clock3 className="h-4 w-4" />
+                    Horarios
+                  </Button>
+                  <Button variant="outline" className="justify-start">
+                    <Ban className="h-4 w-4" />
+                    Bloqueios
+                  </Button>
+                  <Button variant="outline" className="justify-start text-destructive hover:text-destructive">
+                    <Trash2 className="h-4 w-4" />
+                    Remover
+                  </Button>
+                </div>
+              </article>
+            ))}
           </div>
-        ))}
-      </div>
-
-      {/* Empty State (if no professionals) */}
-      {professionals.length === 0 && (
-        <div className="bg-white rounded-lg shadow-sm p-12 text-center">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Plus className="h-8 w-8 text-gray-400" />
-          </div>
-          <h3 className="text-lg mb-2">Nenhum profissional cadastrado</h3>
-          <p className="text-gray-500 mb-4">
-            Adicione profissionais para começar a gerenciar sua equipe.
-          </p>
-          <Button className="bg-[#4a9d9d] hover:bg-[#3d8585] text-white">
-            <Plus className="h-4 w-4 mr-2" />
-            Adicionar Profissional
-          </Button>
-        </div>
-      )}
-    </div>
+        ) : null}
+      </SectionCard>
+    </PageShell>
   );
 }

@@ -1,5 +1,15 @@
-import { Plus, Edit, Trash2, Clock, DollarSign } from "lucide-react";
+import { Clock3, DollarSign, Edit, Plus, Sparkles, Ticket, Trash2 } from "lucide-react";
+
+import { EmptyStatePanel, MetricCard, PageShell, SectionCard } from "../components/PageShell";
 import { Button } from "../components/ui/button";
+
+type Service = {
+  id: number;
+  name: string;
+  duration: string;
+  price: string;
+  category: string;
+};
 
 const stats = [
   { label: "Serviços Ativos", value: "5" },
@@ -43,101 +53,110 @@ const services = [
     price: "R$ 30,00",
     category: "Estética",
   },
-];
+] satisfies Service[];
 
 export function Servicos() {
   return (
-    <div className="p-6 lg:p-8">
-      {/* Header */}
-      <div className="mb-6">
-        <p className="text-sm text-gray-600 mb-2">GESTÃO &gt; SERVIÇOS</p>
-        <p className="text-xs text-gray-500">
-          Cmd/Ctrl + B alterna a navegação
-        </p>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        {stats.map((stat) => (
-          <div key={stat.label} className="bg-white rounded-lg shadow-sm p-6">
-            <p className="text-sm text-gray-600 mb-2">{stat.label}</p>
-            <p className="text-3xl">{stat.value}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* New Service Button */}
-      <div className="mb-6">
-        <Button className="bg-[#4a9d9d] hover:bg-[#3d8585] text-white">
-          <Plus className="h-4 w-4 mr-2" />
-          Novo Serviço
+    <PageShell
+      eyebrow="Gestao"
+      title="Catalogo de servicos"
+      description="Transforme o catalogo em uma vitrine mais elegante, com leitura rapida de categorias, duracao e preco medio por atendimento."
+      actions={
+        <Button>
+          <Plus className="h-4 w-4" />
+          Novo servico
         </Button>
+      }
+    >
+      <div className="metric-grid">
+        <MetricCard
+          label={stats[0].label}
+          value={stats[0].value}
+          helper="Servicos ativos no catalogo"
+          icon={<Sparkles className="h-5 w-5" />}
+        />
+        <MetricCard
+          label={stats[1].label}
+          value={stats[1].value}
+          helper="Faixa media de faturamento por atendimento"
+          icon={<Ticket className="h-5 w-5" />}
+          accent="sand"
+        />
+        <MetricCard
+          label={stats[2].label}
+          value={stats[2].value}
+          helper="Estrutura pronta para vender melhor"
+          icon={<Clock3 className="h-5 w-5" />}
+          accent="coral"
+        />
       </div>
 
-      {/* Services Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {services.map((service) => (
-          <div
-            key={service.id}
-            className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow"
-          >
-            {/* Category Badge */}
-            <div className="mb-4">
-              <span className="px-3 py-1 bg-[#e8f4f4] text-[#4a9d9d] rounded-full text-xs">
-                {service.category}
-              </span>
-            </div>
-
-            {/* Service Name */}
-            <h3 className="text-lg mb-4">{service.name}</h3>
-
-            {/* Duration and Price */}
-            <div className="space-y-2 mb-4">
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Clock className="h-4 w-4" />
-                <span>{service.duration}</span>
-              </div>
-              <div className="flex items-center gap-2 text-lg">
-                <DollarSign className="h-5 w-5 text-[#4a9d9d]" />
-                <span>{service.price}</span>
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="flex gap-2 pt-4 border-t border-gray-200">
-              <Button variant="outline" size="sm" className="flex-1">
-                <Edit className="h-4 w-4 mr-1" />
-                Editar
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+      <SectionCard
+        title="Servicos cadastrados"
+        description="Cards mais refinados ajudam a comparar categorias, entender ticket medio e ajustar o portfolio com menos esforco visual."
+      >
+        {services.length > 0 ? (
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {services.map((service) => (
+              <article
+                key={service.id}
+                className="group rounded-[1.6rem] border border-white/70 bg-white/64 p-5 shadow-[0_22px_52px_-34px_rgba(73,47,22,0.34)] transition-transform duration-300 hover:-translate-y-1"
               >
-                <Trash2 className="h-4 w-4 mr-1" />
-                Remover
-              </Button>
-            </div>
-          </div>
-        ))}
-      </div>
+                <div className="flex items-start justify-between gap-3">
+                  <span className="soft-badge" data-variant="warm">
+                    {service.category}
+                  </span>
+                  <span className="data-pill text-xs uppercase tracking-[0.18em]">
+                    {service.duration}
+                  </span>
+                </div>
 
-      {/* Empty State */}
-      {services.length === 0 && (
-        <div className="bg-white rounded-lg shadow-sm p-12 text-center">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Plus className="h-8 w-8 text-gray-400" />
+                <h3 className="mt-5 text-2xl text-foreground">{service.name}</h3>
+
+                <div className="mt-6 space-y-3">
+                  <div className="data-pill justify-between">
+                    <span className="flex items-center gap-2 text-muted-foreground">
+                      <Clock3 className="h-4 w-4" />
+                      Duracao
+                    </span>
+                    <span className="font-medium text-foreground">{service.duration}</span>
+                  </div>
+                  <div className="data-pill justify-between">
+                    <span className="flex items-center gap-2 text-muted-foreground">
+                      <DollarSign className="h-4 w-4" />
+                      Preco
+                    </span>
+                    <span className="text-lg font-semibold text-foreground">{service.price}</span>
+                  </div>
+                </div>
+
+                <div className="mt-6 flex gap-2 border-t border-[rgba(74,52,34,0.08)] pt-4">
+                  <Button variant="outline" className="flex-1">
+                    <Edit className="h-4 w-4" />
+                    Editar
+                  </Button>
+                  <Button variant="outline" className="flex-1 text-destructive hover:text-destructive">
+                    <Trash2 className="h-4 w-4" />
+                    Remover
+                  </Button>
+                </div>
+              </article>
+            ))}
           </div>
-          <h3 className="text-lg mb-2">Nenhum serviço cadastrado</h3>
-          <p className="text-gray-500 mb-4">
-            Adicione serviços para começar a gerenciar seu catálogo.
-          </p>
-          <Button className="bg-[#4a9d9d] hover:bg-[#3d8585] text-white">
-            <Plus className="h-4 w-4 mr-2" />
-            Adicionar Serviço
-          </Button>
-        </div>
-      )}
-    </div>
+        ) : (
+          <EmptyStatePanel
+            icon={<Plus className="h-7 w-7" />}
+            title="Nenhum servico cadastrado"
+            description="Adicione servicos para apresentar melhor seu catalogo, criar combinacoes e aumentar o ticket medio com mais clareza."
+            action={
+              <Button>
+                <Plus className="h-4 w-4" />
+                Adicionar servico
+              </Button>
+            }
+          />
+        )}
+      </SectionCard>
+    </PageShell>
   );
 }
