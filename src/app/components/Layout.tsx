@@ -19,6 +19,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+import { useAuth } from "../auth/AuthContext";
 import { Button } from "./ui/button";
 import { cn } from "./ui/utils";
 
@@ -64,6 +65,8 @@ type SidebarContentProps = {
   agendaOpen: boolean;
   currentPath: string;
   workspaceDate: string;
+  userName: string;
+  userEmail: string;
   closeSidebar: () => void;
   handleLogout: () => void;
 };
@@ -74,6 +77,8 @@ function SidebarContent({
   agendaOpen,
   currentPath,
   workspaceDate,
+  userName,
+  userEmail,
   closeSidebar,
   handleLogout,
 }: SidebarContentProps) {
@@ -165,7 +170,7 @@ function SidebarContent({
             <p className="text-[0.65rem] uppercase tracking-[0.24em] text-sidebar-foreground/48">
               Workspace
             </p>
-            <p className="mt-2 text-sm text-white">Luiz Teste 1</p>
+            <p className="mt-2 text-sm text-white">{userName}</p>
           </div>
           <div className="rounded-[1.1rem] border border-white/8 bg-black/14 px-3 py-3">
             <p className="text-[0.65rem] uppercase tracking-[0.24em] text-sidebar-foreground/48">
@@ -244,8 +249,8 @@ function SidebarContent({
             <User className="h-5 w-5" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="truncate text-sm text-white">Luiz Teste 1</p>
-            <p className="truncate text-xs text-sidebar-foreground/55">luiz@teste.com</p>
+            <p className="truncate text-sm text-white">{userName}</p>
+            <p className="truncate text-xs text-sidebar-foreground/55">{userEmail}</p>
           </div>
         </div>
         <button
@@ -263,6 +268,7 @@ function SidebarContent({
 export function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const currentPath = location.pathname === "/" ? "/agenda/timeline" : location.pathname;
   const [agendaExpanded, setAgendaExpanded] = useState(currentPath.startsWith("/agenda/"));
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -271,9 +277,12 @@ export function Layout() {
     day: "2-digit",
     month: "long",
   }).format(new Date());
+  const userName = user?.name ?? "Usuario Horarius";
+  const userEmail = user?.email ?? "usuario@horarius.com";
 
   const handleLogout = () => {
-    navigate("/");
+    logout();
+    navigate("/login", { replace: true });
   };
 
   const closeSidebar = () => {
@@ -292,6 +301,8 @@ export function Layout() {
             agendaOpen={agendaOpen}
             currentPath={currentPath}
             workspaceDate={workspaceDate}
+            userName={userName}
+            userEmail={userEmail}
             closeSidebar={closeSidebar}
             handleLogout={handleLogout}
           />
@@ -311,6 +322,8 @@ export function Layout() {
               agendaOpen={agendaOpen}
               currentPath={currentPath}
               workspaceDate={workspaceDate}
+              userName={userName}
+              userEmail={userEmail}
               closeSidebar={closeSidebar}
               handleLogout={handleLogout}
             />
