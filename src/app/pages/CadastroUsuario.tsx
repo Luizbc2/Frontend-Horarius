@@ -97,13 +97,13 @@ function validateSignupForm(formData: SignupFormData) {
   if (!normalizedEmail) {
     errors.email = "Informe seu e-mail.";
   } else if (!emailPattern.test(normalizedEmail)) {
-    errors.email = "Digite um e-mail valido.";
+    errors.email = "Digite um e-mail válido.";
   }
 
   if (!normalizedCpf) {
     errors.cpf = "Informe seu CPF.";
   } else if (!validateCpf(normalizedCpf)) {
-    errors.cpf = "Digite um CPF valido.";
+    errors.cpf = "Digite um CPF válido.";
   }
 
   if (!formData.password.trim()) {
@@ -173,7 +173,7 @@ export function CadastroUsuario() {
     navigate("/login", {
       replace: true,
       state: {
-        notice: "Cadastro salvo localmente. Agora voce pode entrar no painel.",
+        notice: "Cadastro salvo localmente. Agora você pode entrar no painel.",
         registeredEmail: signupPayload.email,
       },
     });
@@ -188,9 +188,9 @@ export function CadastroUsuario() {
         <section className="surface-panel flex min-h-[24rem] flex-col justify-between overflow-hidden rounded-[2rem] p-6 lg:p-8">
           <div className="max-w-2xl animate-fade-up">
             <span className="eyebrow">Primeiro acesso</span>
-            <h1 className="page-title mt-5 max-w-xl">Crie sua conta e deixe o painel pronto para rodar com voce.</h1>
+            <h1 className="page-title mt-5 max-w-xl">Crie sua conta e deixe o painel pronto para rodar com você.</h1>
             <p className="page-description mt-5 max-w-xl">
-              O cadastro organiza os dados basicos de quem vai usar o sistema e prepara a entrada no painel logo em seguida.
+              O cadastro organiza os dados básicos de quem vai usar o sistema e prepara a entrada no painel logo em seguida.
             </p>
           </div>
 
@@ -199,7 +199,7 @@ export function CadastroUsuario() {
               <div className="flex h-11 w-11 items-center justify-center rounded-[1rem] bg-[linear-gradient(135deg,rgba(89,184,171,0.96),rgba(31,109,104,0.92))] text-primary-foreground">
                 <UserRound className="h-5 w-5" />
               </div>
-              <h2 className="mt-4 text-xl text-foreground">Dados basicos</h2>
+              <h2 className="mt-4 text-xl text-foreground">Dados básicos</h2>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
                 Nome, e-mail, CPF e senha em um fluxo direto, sem excesso de etapas.
               </p>
@@ -211,7 +211,7 @@ export function CadastroUsuario() {
               </div>
               <h2 className="mt-4 text-xl text-foreground">Fluxo separado</h2>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                Cadastro e entrada ficam separados para deixar a experiencia mais clara desde o primeiro uso.
+                Cadastro e entrada ficam separados para deixar a experiência mais clara desde o primeiro uso.
               </p>
             </div>
 
@@ -221,7 +221,7 @@ export function CadastroUsuario() {
               </div>
               <h2 className="mt-4 text-xl text-foreground">Retorno ao login</h2>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                Assim que terminar, voce volta para o login com os dados frescos para entrar.
+                Assim que terminar, você volta para o login com os dados frescos para entrar.
               </p>
             </div>
           </div>
@@ -248,7 +248,7 @@ export function CadastroUsuario() {
                   type="text"
                   value={formData.name}
                   onChange={(event) => handleChange("name", event.target.value)}
-                  placeholder="Ex.: Luiz Otavio"
+                  placeholder="Ex.: Luiz Otávio"
                   className="pl-11"
                   autoComplete="name"
                   aria-invalid={Boolean(formErrors.name)}
@@ -266,7 +266,7 @@ export function CadastroUsuario() {
                   type="email"
                   value={formData.email}
                   onChange={(event) => handleChange("email", event.target.value)}
-                  placeholder="voce@empresa.com"
+                  placeholder="você@empresa.com"
                   className="pl-11"
                   autoComplete="email"
                   aria-invalid={Boolean(formErrors.email)}
@@ -335,7 +335,7 @@ export function CadastroUsuario() {
 
             {formErrors.submit ? (
               <Alert variant="destructive" className="border-destructive/20 bg-destructive/5">
-                <AlertTitle>Cadastro invalido</AlertTitle>
+                <AlertTitle>Cadastro inválido</AlertTitle>
                 <AlertDescription>{formErrors.submit}</AlertDescription>
               </Alert>
             ) : null}
@@ -347,7 +347,7 @@ export function CadastroUsuario() {
               </Button>
 
               <Button asChild type="button" variant="ghost" className="w-full">
-                <Link to="/login">Ja tenho conta</Link>
+                <Link to="/login">Já tenho conta</Link>
               </Button>
             </div>
           </form>

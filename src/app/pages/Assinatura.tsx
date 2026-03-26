@@ -70,24 +70,24 @@ export function Assinatura() {
     <PageShell
       eyebrow="Crescimento"
       title="Planos e assinatura"
-      description="Apresente a oferta com mais clareza, destaque o plano ideal para cada momento do negocio e deixe a comparacao mais elegante."
-      actions={<span className="data-pill">14 dias de teste gratis</span>}
+      description="Apresente a oferta com mais clareza, destaque o plano ideal para cada momento do negócio e deixe a comparação mais elegante."
+      actions={<span className="data-pill">14 dias de teste grátis</span>}
     >
       <div className="metric-grid">
         <MetricCard
-          label="Planos disponiveis"
+          label="Planos disponíveis"
           value={String(plans.length)}
-          helper="Estrutura pronta para escalar o negocio"
+          helper="Estrutura pronta para escalar o negócio"
           accent="default"
         />
         <MetricCard
           label="Economia anual"
           value="17%"
-          helper="Desconto visivel para incentivar permanencia"
+          helper="Desconto visível para incentivar permanência"
           accent="sand"
         />
         <MetricCard
-          label="Periodo de teste"
+          label="Período de teste"
           value="14 dias"
           helper="Entrada leve para novos assinantes"
           accent="coral"
@@ -95,8 +95,8 @@ export function Assinatura() {
       </div>
 
       <SectionCard
-        title="Escolha o ritmo de cobranca"
-        description="Alterne entre mensal e anual para mostrar o valor percebido de cada plano sem poluir a leitura da pagina."
+        title="Escolha o ritmo de cobrança"
+        description="Alterne entre mensal e anual para mostrar o valor percebido de cada plano sem poluir a leitura da página."
         action={
           <div className="inline-flex rounded-[1.1rem] border border-white/70 bg-white/70 p-1 shadow-[0_18px_45px_-28px_rgba(73,47,22,0.24)]">
             <button
@@ -162,13 +162,13 @@ export function Assinatura() {
                       {billingPeriod === "monthly" ? plan.monthlyPrice : plan.annualPrice}
                     </span>
                     <span className="pb-1 text-sm uppercase tracking-[0.2em] text-muted-foreground">
-                      /{billingPeriod === "monthly" ? "mes" : "ano"}
+                      /{billingPeriod === "monthly" ? "mês" : "ano"}
                     </span>
                   </div>
                   <p className="mt-2 text-sm text-muted-foreground">
                     {billingPeriod === "monthly"
-                      ? "Pagamento flexivel, ideal para comecar."
-                      : "Melhor custo para manter o crescimento previsivel."}
+                      ? "Pagamento flexível, ideal para começar."
+                      : "Melhor custo para manter o crescimento previsível."}
                   </p>
                 </div>
 
@@ -200,19 +200,19 @@ export function Assinatura() {
 
       <SectionCard
         title="Perguntas frequentes"
-        description="Respostas diretas deixam a decisao de compra mais leve e evitam atrito antes da assinatura."
+        description="Respostas diretas deixam a decisão de compra mais leve e evitam atrito antes da assinatura."
       >
         <div className="grid gap-3">
           <div className="rounded-[1.4rem] border border-white/70 bg-white/60 p-5">
             <h3 className="text-lg text-foreground">Posso mudar de plano a qualquer momento?</h3>
             <p className="mt-2 text-sm leading-7 text-muted-foreground">
-              Sim. Upgrade e downgrade podem ser feitos sempre que sua operacao pedir outra estrutura.
+              Sim. Upgrade e downgrade podem ser feitos sempre que sua operação pedir outra estrutura.
             </p>
           </div>
           <div className="rounded-[1.4rem] border border-white/70 bg-white/60 p-5">
-            <h3 className="text-lg text-foreground">Como funciona o periodo de teste?</h3>
+            <h3 className="text-lg text-foreground">Como funciona o período de teste?</h3>
             <p className="mt-2 text-sm leading-7 text-muted-foreground">
-              Todos os planos comecam com 14 dias gratis, sem necessidade de cartao para testar o fluxo principal.
+              Todos os planos começam com 14 dias grátis, sem necessidade de cartão para testar o fluxo principal.
             </p>
           </div>
           <div className="rounded-[1.4rem] border border-white/70 bg-white/60 p-5">

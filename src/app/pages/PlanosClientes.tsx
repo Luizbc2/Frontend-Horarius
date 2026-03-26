@@ -15,9 +15,9 @@ export function PlanosClientes() {
 
   return (
     <PageShell
-      eyebrow="Gestao"
+      eyebrow="Gestão"
       title="Planos recorrentes de clientes"
-      description="Deixe a area de recorrencia mais elegante para acompanhar renovacoes, volume mensal e oportunidades de fidelizacao."
+      description="Deixe a área de recorrência mais elegante para acompanhar renovações, volume mensal e oportunidades de fidelização."
     >
       <div className="metric-grid">
         <MetricCard
@@ -34,7 +34,7 @@ export function PlanosClientes() {
           accent="sand"
         />
         <MetricCard
-          label="Proxima renovacao"
+          label="Próxima renovação"
           value="--"
           helper="Aparece assim que o primeiro plano entrar em vigor"
           icon={<Calendar className="h-5 w-5" />}
@@ -44,10 +44,10 @@ export function PlanosClientes() {
 
       <SectionCard
         title="Busca e acompanhamento"
-        description="Procure um cliente ou nome de plano para acompanhar recorrencias sem abrir varias telas."
+        description="Procure um cliente ou nome de plano para acompanhar recorrências sem abrir várias telas."
         action={
           <div className="relative w-full max-w-sm">
-            <Search className="pointer-events-none absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input placeholder="Buscar planos" className="pl-11" />
           </div>
         }
@@ -56,7 +56,7 @@ export function PlanosClientes() {
           <EmptyStatePanel
             icon={<Calendar className="h-7 w-7" />}
             title="Nenhum plano recorrente"
-            description="Quando voce estruturar pacotes recorrentes para clientes, esta area vai mostrar renovacoes, volume contratado e historico de permanencia."
+            description="Quando você estruturar pacotes recorrentes para clientes, esta área vai mostrar renovações, volume contratado e histórico de permanência."
           />
         ) : null}
       </SectionCard>

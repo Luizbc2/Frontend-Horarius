@@ -1,147 +1,382 @@
-import { ImageIcon, LockKeyhole, ShieldCheck, Sparkles, User } from "lucide-react";
+import { useEffect, useState, type FormEvent } from "react";
+import { CreditCard, LockKeyhole, Mail, ShieldCheck, UserRound } from "lucide-react";
 
+import { useAuth } from "../auth/AuthContext";
+import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert";
 import { MetricCard, PageShell, SectionCard } from "../components/PageShell";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
-import { cn } from "../components/ui/utils";
 
-const avatarOptions = [
-  { id: 1, emoji: "👨", label: "Homem 1" },
-  { id: 2, emoji: "👨🏻", label: "Homem 2" },
-  { id: 3, emoji: "👨🏼", label: "Homem 3" },
-  { id: 4, emoji: "👨🏽", label: "Homem 4" },
-  { id: 5, emoji: "👨🏾", label: "Homem 5" },
-  { id: 6, emoji: "👨🏿", label: "Homem 6" },
-  { id: 7, emoji: "👩", label: "Mulher 1" },
-  { id: 8, emoji: "👩🏻", label: "Mulher 2" },
-  { id: 9, emoji: "👩🏼", label: "Mulher 3" },
-  { id: 10, emoji: "👩🏽", label: "Mulher 4" },
-  { id: 11, emoji: "👩🏾", label: "Mulher 5" },
-  { id: 12, emoji: "👩🏿", label: "Mulher 6" },
-  { id: 13, emoji: "🧑", label: "Pessoa 1" },
-  { id: 14, emoji: "🧑🏻", label: "Pessoa 2" },
-  { id: 15, emoji: "🧑🏼", label: "Pessoa 3" },
-  { id: 16, emoji: "🧑🏽", label: "Pessoa 4" },
-];
+type ProfileFormData = {
+  name: string;
+  email: string;
+  cpf: string;
+  password: string;
+  confirmPassword: string;
+};
+
+type ProfileFormErrors = {
+  name?: string;
+  email?: string;
+  cpf?: string;
+  password?: string;
+  confirmPassword?: string;
+  submit?: string;
+};
+
+function normalizeCpf(value: string) {
+  return value.replace(/\D/g, "").slice(0, 11);
+}
+
+function formatCpf(value: string) {
+  const digits = normalizeCpf(value);
+
+  if (digits.length <= 3) {
+    return digits;
+  }
+
+  if (digits.length <= 6) {
+    return `${digits.slice(0, 3)}.${digits.slice(3)}`;
+  }
+
+  if (digits.length <= 9) {
+    return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
+  }
+
+  return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+}
+
+function validateCpf(value: string) {
+  const digits = normalizeCpf(value);
+
+  if (digits.length !== 11 || /^(\d)\1+$/.test(digits)) {
+    return false;
+  }
+
+  const numbers = digits.split("").map(Number);
+  const firstCheck = numbers
+    .slice(0, 9)
+    .reduce((total, digit, index) => total + digit * (10 - index), 0);
+  const firstRemainder = (firstCheck * 10) % 11;
+  const firstDigit = firstRemainder === 10 ? 0 : firstRemainder;
+
+  if (firstDigit !== numbers[9]) {
+    return false;
+  }
+
+  const secondCheck = numbers
+    .slice(0, 10)
+    .reduce((total, digit, index) => total + digit * (11 - index), 0);
+  const secondRemainder = (secondCheck * 10) % 11;
+  const secondDigit = secondRemainder === 10 ? 0 : secondRemainder;
+
+  return secondDigit === numbers[10];
+}
+
+function validatePasswordStrength(value: string) {
+  if (value.length < 8) {
+    return "Use pelo menos 8 caracteres na senha.";
+  }
+
+  if (!/[A-Z]/.test(value)) {
+    return "Inclua ao menos uma letra maiúscula na senha.";
+  }
+
+  if (!/[a-z]/.test(value)) {
+    return "Inclua ao menos uma letra minúscula na senha.";
+  }
+
+  if (!/\d/.test(value)) {
+    return "Inclua ao menos um número na senha.";
+  }
+
+  return "";
+}
+
+function validateProfileForm(formData: ProfileFormData) {
+  const errors: ProfileFormErrors = {};
+
+  if (!formData.name.trim()) {
+    errors.name = "Informe seu nome.";
+  }
+
+  if (!formData.email.trim()) {
+    errors.email = "O e-mail do usuário precisa estar preenchido.";
+  }
+
+  if (!formData.cpf.trim()) {
+    errors.cpf = "Informe seu CPF.";
+  } else if (!validateCpf(formData.cpf)) {
+    errors.cpf = "Digite um CPF válido.";
+  }
+
+  if (!formData.password.trim()) {
+    errors.password = "Informe uma nova senha.";
+  } else {
+    const passwordError = validatePasswordStrength(formData.password);
+
+    if (passwordError) {
+      errors.password = passwordError;
+    }
+  }
+
+  if (!formData.confirmPassword.trim()) {
+    errors.confirmPassword = "Confirme a nova senha.";
+  } else if (formData.password !== formData.confirmPassword) {
+    errors.confirmPassword = "As senhas precisam ser iguais.";
+  }
+
+  if (Object.keys(errors).length > 0) {
+    errors.submit = "Revise os campos destacados antes de salvar.";
+  }
+
+  return errors;
+}
 
 export function Perfil() {
+  const { user, updateUserProfile } = useAuth();
+  const [formData, setFormData] = useState<ProfileFormData>({
+    name: "",
+    email: "",
+    cpf: "",
+    password: "",
+    confirmPassword: "",
+  });
+  const [formErrors, setFormErrors] = useState<ProfileFormErrors>({});
+  const [successMessage, setSuccessMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    setFormData((currentData) => ({
+      ...currentData,
+      name: user?.name ?? "",
+      email: user?.email ?? "",
+      cpf: formatCpf(user?.cpf ?? ""),
+    }));
+  }, [user]);
+
+  const handleChange = (field: keyof ProfileFormData, value: string) => {
+    const nextValue = field === "cpf" ? formatCpf(value) : value;
+
+    setFormData((currentData) => ({
+      ...currentData,
+      [field]: nextValue,
+    }));
+
+    setFormErrors((currentErrors) => ({
+      ...currentErrors,
+      [field]: undefined,
+      submit: undefined,
+    }));
+    setSuccessMessage("");
+  };
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const errors = validateProfileForm(formData);
+
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      setSuccessMessage("");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setFormErrors({});
+    setSuccessMessage("");
+
+    try {
+      await updateUserProfile({
+        name: formData.name.trim(),
+        cpf: formData.cpf,
+        password: formData.password,
+      });
+
+      setFormData((currentData) => ({
+        ...currentData,
+        password: "",
+        confirmPassword: "",
+      }));
+      setSuccessMessage("Seus dados foram atualizados com sucesso.");
+    } catch (error) {
+      setFormErrors({
+        submit: error instanceof Error ? error.message : "Não foi possível salvar agora.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const passwordStatus = formData.password ? "Preenchida" : "Pendente";
+
   return (
     <PageShell
       eyebrow="Conta"
-      title="Perfil e seguranca"
-      description="Ajuste os dados principais, escolha um avatar mais expressivo e mantenha a conta protegida com um visual mais organizado."
-      actions={<Button>Salvar alteracoes</Button>}
+      title="Minha conta"
+      description="Atualize os dados da sua conta. O e-mail fica bloqueado e a senha precisa ser confirmada para salvar."
+      actions={
+        <Button type="submit" form="profile-form" disabled={isSubmitting}>
+          {isSubmitting ? "Salvando..." : "Salvar alterações"}
+        </Button>
+      }
     >
       <div className="metric-grid">
         <MetricCard
-          label="Perfil"
-          value="100%"
-          helper="Dados essenciais preenchidos"
-          icon={<Sparkles className="h-5 w-5" />}
+          label="Conta logada"
+          value="Ativa"
+          helper="Esses dados aparecem no painel da conta atual."
+          icon={<UserRound className="h-5 w-5" />}
         />
         <MetricCard
-          label="Avatares"
-          value={String(avatarOptions.length + 1)}
-          helper="Opcoes prontas para personalizacao"
-          icon={<ImageIcon className="h-5 w-5" />}
+          label="E-mail"
+          value="Bloqueado"
+          helper="O e-mail do cadastro é exibido só para consulta."
+          icon={<Mail className="h-5 w-5" />}
           accent="sand"
         />
         <MetricCard
-          label="Seguranca"
-          value="Ativa"
-          helper="Fluxo pronto para atualizar senha"
+          label="Nova senha"
+          value={passwordStatus}
+          helper="Preencha os dois campos abaixo para confirmar a troca."
           icon={<ShieldCheck className="h-5 w-5" />}
           accent="coral"
         />
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1.1fr,0.9fr]">
+      <form id="profile-form" noValidate onSubmit={handleSubmit} className="grid gap-6">
+        {successMessage ? (
+          <Alert className="border-primary/15 bg-primary/5">
+            <AlertTitle>Perfil atualizado</AlertTitle>
+            <AlertDescription>{successMessage}</AlertDescription>
+          </Alert>
+        ) : null}
+
+        {formErrors.submit ? (
+          <Alert variant="destructive" className="border-destructive/20 bg-destructive/5">
+            <AlertTitle>Edição inválida</AlertTitle>
+            <AlertDescription>{formErrors.submit}</AlertDescription>
+          </Alert>
+        ) : null}
+
         <SectionCard
-          title="Informacoes do perfil"
-          description="Mantenha os dados de contato sempre atualizados para garantir uma operacao mais profissional no dia a dia."
+          title="Dados do usuário"
+          description="Aqui você altera somente os dados da conta que está logada agora."
         >
-          <div className="grid gap-4">
+          <div className="grid gap-4 md:grid-cols-2">
             <div className="grid gap-2">
               <label htmlFor="profile-name">Nome</label>
-              <Input id="profile-name" defaultValue="Luiz Teste 1" />
-            </div>
-            <div className="grid gap-2">
-              <label htmlFor="profile-email">Email</label>
-              <Input id="profile-email" type="email" defaultValue="luiz@teste.com" />
-            </div>
-            <div className="grid gap-2">
-              <label htmlFor="profile-phone">Telefone</label>
-              <Input id="profile-phone" type="tel" defaultValue="(11) 98765-4321" />
+              <Input
+                id="profile-name"
+                value={formData.name}
+                onChange={(event) => handleChange("name", event.target.value)}
+                aria-invalid={Boolean(formErrors.name)}
+              />
+              {formErrors.name ? (
+                <p className="min-h-[1.25rem] text-sm text-destructive">{formErrors.name}</p>
+              ) : (
+                <p className="min-h-[1.25rem] text-sm text-muted-foreground">
+                  Nome exibido no painel da sua conta.
+                </p>
+              )}
             </div>
 
-            <div className="pt-2">
-              <Button>Salvar dados do perfil</Button>
+            <div className="grid gap-2">
+              <label htmlFor="profile-email">E-mail</label>
+              <Input
+                id="profile-email"
+                type="email"
+                value={formData.email}
+                disabled
+                readOnly
+                aria-invalid={Boolean(formErrors.email)}
+              />
+              <p className="min-h-[1.25rem] text-sm text-muted-foreground">
+                Este campo não pode ser alterado nesta tela.
+              </p>
+            </div>
+
+            <div className="grid gap-2 md:col-span-2">
+              <label htmlFor="profile-cpf">CPF</label>
+              <div className="relative">
+                <CreditCard className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="profile-cpf"
+                  type="text"
+                  value={formData.cpf}
+                  onChange={(event) => handleChange("cpf", event.target.value)}
+                  className="pl-11"
+                  inputMode="numeric"
+                  placeholder="000.000.000-00"
+                  aria-invalid={Boolean(formErrors.cpf)}
+                />
+              </div>
+              {formErrors.cpf ? (
+                <p className="min-h-[1.25rem] text-sm text-destructive">{formErrors.cpf}</p>
+              ) : (
+                <p className="min-h-[1.25rem] text-sm text-muted-foreground">
+                  Digite o CPF da conta sem mudar o e-mail cadastrado.
+                </p>
+              )}
             </div>
           </div>
         </SectionCard>
 
         <SectionCard
-          title="Escolha seu avatar"
-          description="Use uma identidade visual mais marcante para deixar o painel com a sua cara."
+          title="Segurança"
+          description="Digite a nova senha e repita o mesmo valor no campo ao lado."
         >
-          <div className="grid grid-cols-4 gap-3 sm:grid-cols-5 md:grid-cols-6 xl:grid-cols-4">
-            {avatarOptions.map((avatar) => (
-              <button
-                key={avatar.id}
-                type="button"
-                className="flex aspect-square items-center justify-center rounded-[1.2rem] border border-white/70 bg-white/62 text-3xl shadow-[0_18px_40px_-28px_rgba(73,47,22,0.32)] transition-transform duration-300 hover:-translate-y-0.5 hover:border-primary/35"
-                title={avatar.label}
-              >
-                <span role="img" aria-label={avatar.label}>
-                  {avatar.emoji}
-                </span>
-              </button>
-            ))}
-
-            <button
-              type="button"
-              className={cn(
-                "flex aspect-square items-center justify-center rounded-[1.2rem] border text-white shadow-[0_22px_46px_-26px_rgba(31,109,104,0.8)] transition-transform duration-300 hover:-translate-y-0.5",
-                "border-primary/15 bg-[linear-gradient(135deg,rgba(31,109,104,0.96),rgba(53,92,125,0.88))]",
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-2">
+              <label htmlFor="profile-password">Nova senha</label>
+              <div className="relative">
+                <LockKeyhole className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="profile-password"
+                  type="password"
+                  value={formData.password}
+                  onChange={(event) => handleChange("password", event.target.value)}
+                  className="pl-11"
+                  placeholder="Use 8+ caracteres, maiúscula e número"
+                  autoComplete="new-password"
+                  aria-invalid={Boolean(formErrors.password)}
+                />
+              </div>
+              {formErrors.password ? (
+                <p className="min-h-[1.25rem] text-sm text-destructive">{formErrors.password}</p>
+              ) : (
+                <p className="min-h-[1.25rem] text-sm text-muted-foreground">
+                  Use 8 ou mais caracteres, com letra maiúscula, minúscula e número.
+                </p>
               )}
-              title="Avatar atual"
-            >
-              <User className="h-8 w-8" />
-            </button>
-          </div>
+            </div>
 
-          <p className="mt-4 text-sm leading-7 text-muted-foreground">
-            Clique em um avatar para definir sua foto de perfil no painel.
-          </p>
+            <div className="grid gap-2">
+              <label htmlFor="profile-confirm-password">Confirmar senha</label>
+              <div className="relative">
+                <LockKeyhole className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="profile-confirm-password"
+                  type="password"
+                  value={formData.confirmPassword}
+                  onChange={(event) => handleChange("confirmPassword", event.target.value)}
+                  className="pl-11"
+                  placeholder="Repita exatamente a nova senha"
+                  autoComplete="new-password"
+                  aria-invalid={Boolean(formErrors.confirmPassword)}
+                />
+              </div>
+              {formErrors.confirmPassword ? (
+                <p className="min-h-[1.25rem] text-sm text-destructive">{formErrors.confirmPassword}</p>
+              ) : (
+                <p className="min-h-[1.25rem] text-sm text-muted-foreground">
+                  Digite novamente a nova senha.
+                </p>
+              )}
+            </div>
+          </div>
         </SectionCard>
-      </div>
-
-      <SectionCard
-        title="Seguranca"
-        description="Atualize a senha quando precisar reforcar o acesso da conta e manter o painel protegido."
-      >
-        <div className="grid gap-4 md:grid-cols-3">
-          <div className="grid gap-2">
-            <label htmlFor="current-password">Senha atual</label>
-            <Input id="current-password" type="password" placeholder="••••••••" />
-          </div>
-          <div className="grid gap-2">
-            <label htmlFor="new-password">Nova senha</label>
-            <Input id="new-password" type="password" placeholder="••••••••" />
-          </div>
-          <div className="grid gap-2">
-            <label htmlFor="confirm-password">Confirmar nova senha</label>
-            <Input id="confirm-password" type="password" placeholder="••••••••" />
-          </div>
-        </div>
-
-        <div className="mt-5">
-          <Button>
-            <LockKeyhole className="h-4 w-4" />
-            Alterar senha
-          </Button>
-        </div>
-      </SectionCard>
+      </form>
     </PageShell>
   );
 }

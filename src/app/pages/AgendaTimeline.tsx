@@ -36,7 +36,7 @@ const timeSlots = [
   "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
   "12:00", "12:30", "13:00", "13:30", "14:00", "14:30",
   "15:00", "15:30", "16:00", "16:30", "17:00", "17:30",
-  "18:00", "18:30", "19:00"
+  "18:00", "18:30", "19:00",
 ];
 
 const appointments = [
@@ -47,7 +47,7 @@ const appointments = [
     service: "Corte + Barba",
     professional: "João",
     status: "confirmado",
-    duration: 1
+    duration: 1,
   },
   {
     id: 2,
@@ -56,8 +56,8 @@ const appointments = [
     service: "Corte Simples",
     professional: "João",
     status: "pendente",
-    duration: 1
-  }
+    duration: 1,
+  },
 ] satisfies Appointment[];
 
 const statusStyles: Record<
@@ -110,7 +110,7 @@ export function AgendaTimeline() {
     return date.toLocaleDateString("pt-BR", {
       weekday: "long",
       day: "2-digit",
-      month: "long"
+      month: "long",
     });
   };
 
@@ -132,9 +132,9 @@ export function AgendaTimeline() {
 
   return (
     <PageShell
-      eyebrow="Gestao diaria"
+      eyebrow="Gestão diária"
       title="Agenda do dia"
-      description="Acompanhe a ocupacao da equipe em uma linha do tempo limpa, com filtros rapidos e leitura facil dos status de atendimento."
+      description="Acompanhe a ocupação da equipe em uma linha do tempo limpa, com filtros rápidos e leitura fácil dos status de atendimento."
       actions={
         <>
           <Button variant="outline">
@@ -162,7 +162,7 @@ export function AgendaTimeline() {
           accent="sand"
         />
         <MetricCard
-          label="Ocupacao"
+          label="Ocupação"
           value={`${occupancy}%`}
           helper={`${pendingCount} pendente${pendingCount === 1 ? "" : "s"} para confirmar`}
           icon={<Clock3 className="h-5 w-5" />}
@@ -172,7 +172,7 @@ export function AgendaTimeline() {
 
       <SectionCard
         title="Controle do dia"
-        description="Navegue entre as datas, filtre por profissional e visualize apenas o que importa para a operacao de hoje."
+        description="Navegue entre as datas, filtre por profissional e visualize apenas o que importa para a operação de hoje."
         action={<span className="data-pill capitalize">{formatDate(selectedDate)}</span>}
       >
         <div className="grid gap-4 xl:grid-cols-[1.35fr,1fr]">
@@ -198,7 +198,7 @@ export function AgendaTimeline() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="todos">Todos</SelectItem>
-                <SelectItem value="João">João</SelectItem>
+                <SelectItem value="joão">João</SelectItem>
               </SelectContent>
             </Select>
 
@@ -224,7 +224,7 @@ export function AgendaTimeline() {
 
       <SectionCard
         title="Grade da agenda"
-        description="Uma visao linear dos horarios ajuda a encontrar janelas livres e reagendar com rapidez sem perder o contexto do dia."
+        description="Uma visão linear dos horários ajuda a encontrar janelas livres e reagendar com rapidez sem perder o contexto do dia."
       >
         <div className="overflow-hidden rounded-[1.5rem] border border-white/70 bg-white/52 shadow-[0_24px_55px_-34px_rgba(73,47,22,0.28)]">
           <div className="overflow-x-auto">
@@ -232,7 +232,7 @@ export function AgendaTimeline() {
               <div className="grid grid-cols-[110px_1fr] border-b border-[rgba(74,52,34,0.08)] bg-white/55">
                 <div className="px-5 py-4">
                   <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
-                    Horario
+                    Horário
                   </p>
                 </div>
                 <div className="px-5 py-4">
@@ -283,7 +283,7 @@ export function AgendaTimeline() {
                           </div>
                         ) : (
                           <div className="flex min-h-[86px] items-center rounded-[1.2rem] border border-dashed border-[rgba(74,52,34,0.12)] px-4 text-sm text-muted-foreground">
-                            Horario livre para encaixe ou pausa tecnica.
+                            Horário livre para encaixe ou pausa técnica.
                           </div>
                         )}
                       </div>

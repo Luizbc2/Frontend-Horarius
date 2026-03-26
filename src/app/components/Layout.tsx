@@ -38,11 +38,11 @@ const agendaItems: NavigationItem[] = [
 
 const navigationGroups: Array<{ title: string; items: NavigationItem[] }> = [
   {
-    title: "Operacao",
+    title: "Operação",
     items: [
       { label: "Clientes", path: "/clientes", icon: Users },
       { label: "Profissionais", path: "/profissionais", icon: Scissors },
-      { label: "Servicos", path: "/servicos", icon: Package },
+      { label: "Serviços", path: "/servicos", icon: Package },
       { label: "Em breve", icon: Sparkles, badge: "soon", disabled: true },
     ],
   },
@@ -277,7 +277,7 @@ export function Layout() {
     day: "2-digit",
     month: "long",
   }).format(new Date());
-  const userName = user?.name ?? "Usuario Horarius";
+  const userName = user?.name ?? "Usuário Horarius";
   const userEmail = user?.email ?? "usuario@horarius.com";
 
   const handleLogout = () => {

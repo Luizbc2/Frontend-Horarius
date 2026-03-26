@@ -109,7 +109,7 @@ function validateField(field: keyof ClientFormData, value: string) {
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!emailPattern.test(trimmedValue)) {
-      return "Digite um email valido, como nome@dominio.com.";
+      return "Digite um e-mail válido, como nome@dominio.com.";
     }
   }
 
@@ -117,7 +117,7 @@ function validateField(field: keyof ClientFormData, value: string) {
     const digits = normalizePhone(trimmedValue);
 
     if (digits.length < 10) {
-      return "Digite um telefone valido com 10 ou 11 numeros.";
+      return "Digite um telefone válido com 10 ou 11 números.";
     }
   }
 
@@ -215,7 +215,7 @@ export function Clientes() {
     setFormErrors(errors);
 
     if (Object.keys(errors).length > 0) {
-      toast.error("Revise os campos invalidos antes de salvar.");
+      toast.error("Revise os campos inválidos antes de salvar.");
       return;
     }
 
@@ -271,9 +271,9 @@ export function Clientes() {
   return (
     <>
       <PageShell
-        eyebrow="Gestao"
+        eyebrow="Gestão"
         title="Relacionamento com clientes"
-        description="Uma inbox mais limpa para acompanhar conversas, identificar oportunidades de retorno e manter o historico sempre a mao."
+        description="Uma inbox mais limpa para acompanhar conversas, identificar oportunidades de retorno e manter o histórico sempre à mão."
         actions={
           <Button onClick={openCreateDialog}>
             <Plus className="h-4 w-4" />
@@ -289,14 +289,14 @@ export function Clientes() {
             icon={<MessageCircle className="h-5 w-5" />}
           />
           <MetricCard
-            label="Conversas Ativas"
+            label="Conversas ativas"
             value={String(clients.length)}
             helper="Conversas iniciadas na inbox"
             icon={<MessageCircle className="h-5 w-5" />}
             accent="sand"
           />
           <MetricCard
-            label="Nao Lidas"
+            label="Não lidas"
             value={String(unreadCount)}
             helper="Mensagens aguardando resposta"
             icon={<MessageCircle className="h-5 w-5" />}
@@ -309,7 +309,7 @@ export function Clientes() {
           description="Use a busca para localizar rapidamente um cliente ou abrir o canal ideal para iniciar um novo contato."
           action={
             <div className="relative w-full max-w-sm">
-              <Search className="pointer-events-none absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
@@ -323,7 +323,7 @@ export function Clientes() {
             <EmptyStatePanel
               icon={<MessageCircle className="h-7 w-7" />}
               title="Nenhuma conversa ainda"
-              description="Quando voce iniciar atendimentos por mensagem, a inbox vai mostrar o historico, horario da ultima interacao e atalhos para continuidade do contato."
+              description="Quando você iniciar atendimentos por mensagem, a inbox vai mostrar o histórico, horário da última interação e atalhos para continuidade do contato."
               action={
                 <Button onClick={openCreateDialog}>
                   <Plus className="h-4 w-4" />
@@ -367,7 +367,7 @@ export function Clientes() {
                       {client.lastMessage}
                     </p>
 
-                <div className="mt-4 flex flex-wrap gap-2">
+                    <div className="mt-4 flex flex-wrap gap-2">
                       {client.phone ? (
                         <span className="data-pill text-xs">
                           <Phone className="h-3.5 w-3.5" />
@@ -417,7 +417,7 @@ export function Clientes() {
             </DialogTitle>
             <DialogDescription className="leading-6">
               {editingClientId === null
-                ? "Cadastro local para alimentar a inbox enquanto nao temos o back-end."
+                ? "Cadastro local para alimentar a inbox enquanto não temos o back-end."
                 : "Atualize os dados do cliente localmente enquanto a tela ainda opera sem back-end."}
             </DialogDescription>
           </DialogHeader>
@@ -439,7 +439,7 @@ export function Clientes() {
 
             <div className="grid gap-4 md:grid-cols-2">
               <div className="grid gap-2">
-                <label htmlFor="client-email">Email</label>
+                <label htmlFor="client-email">E-mail</label>
                 <Input
                   id="client-email"
                   type="text"
@@ -468,9 +468,7 @@ export function Clientes() {
                 {formErrors.phone ? (
                   <p className="text-sm text-destructive">{formErrors.phone}</p>
                 ) : (
-                  <p className="text-sm text-muted-foreground">
-                
-                  </p>
+                  <p className="text-sm text-muted-foreground">Use 10 ou 11 números com DDD.</p>
                 )}
               </div>
             </div>
@@ -481,7 +479,7 @@ export function Clientes() {
                 id="client-message"
                 value={formData.lastMessage}
                 onChange={(event) => handleChange("lastMessage", event.target.value)}
-                placeholder="Adicione uma observacao ou a primeira mensagem da conversa."
+                placeholder="Adicione uma observação ou a primeira mensagem da conversa."
                 rows={4}
               />
             </div>
@@ -492,7 +490,7 @@ export function Clientes() {
               </Button>
               <Button type="submit">
                 <Plus className="h-4 w-4" />
-                {editingClientId === null ? "Salvar cliente" : "Salvar alteracoes"}
+                {editingClientId === null ? "Salvar cliente" : "Salvar alterações"}
               </Button>
             </DialogFooter>
           </form>

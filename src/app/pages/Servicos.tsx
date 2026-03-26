@@ -12,8 +12,8 @@ type Service = {
 };
 
 const stats = [
-  { label: "Serviços Ativos", value: "5" },
-  { label: "Ticket Médio", value: "R$ 31,00" },
+  { label: "Serviços ativos", value: "5" },
+  { label: "Ticket médio", value: "R$ 31,00" },
   { label: "Estado", value: "Organizado" },
 ];
 
@@ -58,13 +58,13 @@ const services = [
 export function Servicos() {
   return (
     <PageShell
-      eyebrow="Gestao"
-      title="Catalogo de servicos"
-      description="Transforme o catalogo em uma vitrine mais elegante, com leitura rapida de categorias, duracao e preco medio por atendimento."
+      eyebrow="Gestão"
+      title="Catálogo de serviços"
+      description="Transforme o catálogo em uma vitrine mais elegante, com leitura rápida de categorias, duração e preço médio por atendimento."
       actions={
         <Button>
           <Plus className="h-4 w-4" />
-          Novo servico
+          Novo serviço
         </Button>
       }
     >
@@ -72,13 +72,13 @@ export function Servicos() {
         <MetricCard
           label={stats[0].label}
           value={stats[0].value}
-          helper="Servicos ativos no catalogo"
+          helper="Serviços ativos no catálogo"
           icon={<Sparkles className="h-5 w-5" />}
         />
         <MetricCard
           label={stats[1].label}
           value={stats[1].value}
-          helper="Faixa media de faturamento por atendimento"
+          helper="Faixa média de faturamento por atendimento"
           icon={<Ticket className="h-5 w-5" />}
           accent="sand"
         />
@@ -92,8 +92,8 @@ export function Servicos() {
       </div>
 
       <SectionCard
-        title="Servicos cadastrados"
-        description="Cards mais refinados ajudam a comparar categorias, entender ticket medio e ajustar o portfolio com menos esforco visual."
+        title="Serviços cadastrados"
+        description="Cards mais refinados ajudam a comparar categorias, entender ticket médio e ajustar o portfólio com menos esforço visual."
       >
         {services.length > 0 ? (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -117,14 +117,14 @@ export function Servicos() {
                   <div className="data-pill justify-between">
                     <span className="flex items-center gap-2 text-muted-foreground">
                       <Clock3 className="h-4 w-4" />
-                      Duracao
+                      Duração
                     </span>
                     <span className="font-medium text-foreground">{service.duration}</span>
                   </div>
                   <div className="data-pill justify-between">
                     <span className="flex items-center gap-2 text-muted-foreground">
                       <DollarSign className="h-4 w-4" />
-                      Preco
+                      Preço
                     </span>
                     <span className="text-lg font-semibold text-foreground">{service.price}</span>
                   </div>
@@ -146,12 +146,12 @@ export function Servicos() {
         ) : (
           <EmptyStatePanel
             icon={<Plus className="h-7 w-7" />}
-            title="Nenhum servico cadastrado"
-            description="Adicione servicos para apresentar melhor seu catalogo, criar combinacoes e aumentar o ticket medio com mais clareza."
+            title="Nenhum serviço cadastrado"
+            description="Adicione serviços para apresentar melhor seu catálogo, criar combinações e aumentar o ticket médio com mais clareza."
             action={
               <Button>
                 <Plus className="h-4 w-4" />
-                Adicionar servico
+                Adicionar serviço
               </Button>
             }
           />

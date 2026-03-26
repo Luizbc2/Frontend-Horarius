@@ -63,7 +63,7 @@ export function Login() {
     if (!normalizedEmail) {
       nextErrors.email = "Informe seu e-mail.";
     } else if (!emailPattern.test(normalizedEmail)) {
-      nextErrors.email = "Digite um e-mail valido.";
+      nextErrors.email = "Digite um e-mail válido.";
     }
 
     if (!password.trim()) {
@@ -83,7 +83,7 @@ export function Login() {
       navigate(redirectPath, { replace: true });
     } catch (error) {
       setErrors({
-        submit: error instanceof Error ? error.message : "Nao foi possivel entrar agora.",
+        submit: error instanceof Error ? error.message : "Não foi possível entrar agora.",
       });
     } finally {
       setIsSubmitting(false);
@@ -99,9 +99,9 @@ export function Login() {
         <section className="surface-panel flex min-h-[24rem] flex-col justify-between overflow-hidden rounded-[2rem] p-6 lg:p-8">
           <div className="max-w-2xl animate-fade-up">
             <span className="eyebrow">Painel do studio</span>
-            <h1 className="page-title mt-5 max-w-xl">Seu dia comeca aqui, antes da primeira cadeira ocupar.</h1>
+            <h1 className="page-title mt-5 max-w-xl">Seu dia começa aqui, antes da primeira cadeira ocupar.</h1>
             <p className="page-description mt-5 max-w-xl">
-              Entre para acompanhar agenda, equipe, servicos e tudo que move a rotina do studio em um so lugar.
+              Entre para acompanhar agenda, equipe, serviços e tudo que move a rotina do studio em um só lugar.
             </p>
           </div>
 
@@ -112,7 +112,7 @@ export function Login() {
               </div>
               <h2 className="mt-4 text-xl text-foreground">Agenda central</h2>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                Veja os compromissos do dia e ajuste a operacao sem perder tempo pulando de tela.
+                Veja os compromissos do dia e ajuste a operação sem perder tempo pulando de tela.
               </p>
             </div>
 
@@ -120,9 +120,9 @@ export function Login() {
               <div className="flex h-11 w-11 items-center justify-center rounded-[1rem] bg-[linear-gradient(135deg,rgba(211,140,86,0.94),rgba(168,103,53,0.92))] text-white">
                 <ShieldCheck className="h-5 w-5" />
               </div>
-              <h2 className="mt-4 text-xl text-foreground">Sessao persistida</h2>
+              <h2 className="mt-4 text-xl text-foreground">Sessão persistida</h2>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                O acesso continua salvo no navegador para voce voltar ao painel sem refazer o caminho.
+                O acesso continua salvo no navegador para você voltar ao painel sem refazer o caminho.
               </p>
             </div>
 
@@ -132,7 +132,7 @@ export function Login() {
               </div>
               <h2 className="mt-4 text-xl text-foreground">Fluxo preparado</h2>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                A estrutura de entrada ja esta pronta para crescer junto com a autenticacao real do sistema.
+                A estrutura de entrada já está pronta para crescer junto com a autenticação real do sistema.
               </p>
             </div>
           </div>
@@ -152,7 +152,7 @@ export function Login() {
           <form noValidate onSubmit={handleSubmit} className="mt-8 grid gap-4">
             {successNotice ? (
               <Alert className="border-primary/15 bg-primary/5">
-                <AlertTitle>Cadastro concluido</AlertTitle>
+                <AlertTitle>Cadastro concluído</AlertTitle>
                 <AlertDescription>{successNotice}</AlertDescription>
               </Alert>
             ) : null}
@@ -166,7 +166,7 @@ export function Login() {
                   type="email"
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
-                  placeholder="voce@empresa.com"
+                  placeholder="você@empresa.com"
                   className="pl-11"
                   aria-invalid={Boolean(errors.email)}
                   autoComplete="email"

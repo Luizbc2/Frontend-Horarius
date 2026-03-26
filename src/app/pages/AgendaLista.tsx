@@ -120,7 +120,7 @@ export function AgendaLista() {
     }
   };
 
-  const filteredAppointments = appointments.filter(apt => {
+  const filteredAppointments = appointments.filter((apt) => {
     if (selectedProfessional !== "todos" && apt.professional.toLowerCase() !== selectedProfessional) {
       return false;
     }
@@ -145,9 +145,9 @@ export function AgendaLista() {
 
   return (
     <PageShell
-      eyebrow="Gestao diaria"
+      eyebrow="Gestão diária"
       title="Lista de agendamentos"
-      description="Filtre a operacao por profissional, status e busca textual para encontrar rapidamente qualquer atendimento do dia."
+      description="Filtre a operação por profissional, status e busca textual para encontrar rapidamente qualquer atendimento do dia."
       actions={
         <Button variant="secondary" asChild>
           <Link to="/agenda/timeline">Abrir timeline</Link>
@@ -179,7 +179,7 @@ export function AgendaLista() {
 
       <SectionCard
         title="Filtros e resultados"
-        description="Combine data, profissional e status para reduzir a lista e agir mais rapido sobre cada atendimento."
+        description="Combine data, profissional e status para reduzir a lista e agir mais rápido sobre cada atendimento."
       >
         <div className="grid gap-3 lg:grid-cols-[1.05fr_1fr_1fr_1.2fr_auto]">
           <Input type="date" value={selectedDate} readOnly />
@@ -190,7 +190,7 @@ export function AgendaLista() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="todos">Todos profissionais</SelectItem>
-              <SelectItem value="João">João</SelectItem>
+              <SelectItem value="joão">João</SelectItem>
             </SelectContent>
           </Select>
 
@@ -205,13 +205,13 @@ export function AgendaLista() {
               <SelectItem value="cancelado">Cancelado</SelectItem>
             </SelectContent>
           </Select>
-          
+
           <div className="relative">
-            <Search className="pointer-events-none absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
-              placeholder="Buscar cliente ou servico"
+              placeholder="Buscar cliente ou serviço"
               className="pl-11"
             />
           </div>
@@ -229,10 +229,10 @@ export function AgendaLista() {
                 <TableRow>
                   <TableHead>Data e hora</TableHead>
                   <TableHead>Cliente</TableHead>
-                  <TableHead>Servico</TableHead>
+                  <TableHead>Serviço</TableHead>
                   <TableHead>Profissional</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="w-[96px] text-right">Acoes</TableHead>
+                  <TableHead className="w-[96px] text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -298,7 +298,7 @@ export function AgendaLista() {
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
                 <span className="data-pill text-sm">
-                  Pagina {safePage} de {totalPages}
+                  Página {safePage} de {totalPages}
                 </span>
                 <Button
                   variant="outline"
