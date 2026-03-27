@@ -23,17 +23,23 @@ Aplicacao front-end desenvolvida com React e Vite para gestao de agenda, cliente
 npm install
 ```
 
-3. Inicie o servidor de desenvolvimento:
+3. Crie o arquivo `.env` com base em `.env.example`.
+
+4. Inicie o servidor de desenvolvimento:
 
 ```bash
 npm run dev
 ```
 
-4. Acesse no navegador:
+5. Acesse no navegador:
 
 ```text
 http://localhost:5173
 ```
+
+## Variaveis de ambiente
+
+- `VITE_API_BASE_URL`: endereco base da API do backend.
 
 ## Gerar build de producao
 
