@@ -1,18 +1,14 @@
 import { createContext, useContext, useState, type ReactNode } from "react";
 
-const AUTH_STORAGE_KEY = "horarius:auth";
-const SIGNUP_STORAGE_KEY = "horarius:last-signup";
-
-type AuthUser = {
-  name: string;
-  email: string;
-  cpf: string;
-};
-
-type AuthSession = {
-  token: string;
-  user: AuthUser;
-};
+import {
+  clearStoredSession,
+  type AuthSession,
+  type AuthUser,
+  persistSession,
+  readStoredSession,
+  readStoredSignup,
+  syncStoredSignupProfile,
+} from "../lib/auth-storage";
 
 type UpdateUserProfileInput = {
   name: string;
@@ -44,80 +40,6 @@ function createUserName(email: string) {
   return chunks
     .map((chunk) => `${chunk.charAt(0).toUpperCase()}${chunk.slice(1)}`)
     .join(" ");
-}
-
-function normalizeCpf(value: string) {
-  return value.replace(/\D/g, "").slice(0, 11);
-}
-
-function readStoredSignup() {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  try {
-    const rawSignup = window.localStorage.getItem(SIGNUP_STORAGE_KEY);
-
-    if (!rawSignup) {
-      return null;
-    }
-
-    const parsedSignup = JSON.parse(rawSignup) as Partial<AuthUser> & { createdAt?: string };
-
-    if (!parsedSignup.email || !parsedSignup.name) {
-      return null;
-    }
-
-    return {
-      email: parsedSignup.email,
-      name: parsedSignup.name,
-      cpf: typeof parsedSignup.cpf === "string" ? normalizeCpf(parsedSignup.cpf) : "",
-    };
-  } catch {
-    return null;
-  }
-}
-
-function persistSession(session: AuthSession) {
-  window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session));
-}
-
-function readStoredSession() {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  try {
-    const rawSession = window.localStorage.getItem(AUTH_STORAGE_KEY);
-
-    if (!rawSession) {
-      return null;
-    }
-
-    const parsedSession = JSON.parse(rawSession) as Partial<AuthSession>;
-
-    if (!parsedSession.token || !parsedSession.user?.email || !parsedSession.user?.name) {
-      return null;
-    }
-
-    const storedSignup = readStoredSignup();
-    const matchingSignup =
-      storedSignup?.email.toLowerCase() === parsedSession.user.email.toLowerCase() ? storedSignup : null;
-
-    return {
-      token: parsedSession.token,
-      user: {
-        email: parsedSession.user.email,
-        name: parsedSession.user.name,
-        cpf:
-          typeof parsedSession.user.cpf === "string" && parsedSession.user.cpf.trim()
-            ? normalizeCpf(parsedSession.user.cpf)
-            : matchingSignup?.cpf ?? "",
-      },
-    } satisfies AuthSession;
-  } catch {
-    return null;
-  }
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -161,29 +83,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user: {
         ...session.user,
         name: input.name.trim(),
-        cpf: normalizeCpf(input.cpf),
+        cpf: input.cpf.replace(/\D/g, "").slice(0, 11),
       },
     };
 
     persistSession(nextSession);
     setSession(nextSession);
-
-    const storedSignup = readStoredSignup();
-
-    if (storedSignup?.email.toLowerCase() === session.user.email.toLowerCase()) {
-      window.localStorage.setItem(
-        SIGNUP_STORAGE_KEY,
-        JSON.stringify({
-          ...storedSignup,
-          name: nextSession.user.name,
-          cpf: nextSession.user.cpf,
-        }),
-      );
-    }
+    syncStoredSignupProfile(session.user.email, nextSession.user);
   };
 
   const logout = () => {
-    window.localStorage.removeItem(AUTH_STORAGE_KEY);
+    clearStoredSession();
     setSession(null);
   };
 
