@@ -6,6 +6,7 @@ import { AuthShowcasePanel } from "../components/auth/AuthShowcasePanel";
 import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
+import { signupWithApi } from "../services/auth";
 
 const SIGNUP_STORAGE_KEY = "horarius:last-signup";
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -30,7 +31,7 @@ type SignupFormErrors = {
 const signupFeatures = [
   {
     icon: UserRound,
-    title: "Dados básicos",
+    title: "Dados bÃ¡sicos",
     description: "Nome, e-mail, CPF e senha em um fluxo direto, sem excesso de etapas.",
     iconClassName:
       "bg-[linear-gradient(135deg,rgba(89,184,171,0.96),rgba(31,109,104,0.92))] text-primary-foreground",
@@ -38,14 +39,14 @@ const signupFeatures = [
   {
     icon: CalendarDays,
     title: "Fluxo separado",
-    description: "Cadastro e entrada ficam separados para deixar a experiência mais clara desde o começo.",
+    description: "Cadastro e entrada ficam separados para deixar a experiÃªncia mais clara desde o comeÃ§o.",
     iconClassName:
       "bg-[linear-gradient(135deg,rgba(211,140,86,0.94),rgba(168,103,53,0.92))] text-white",
   },
   {
     icon: ArrowRight,
     title: "Volta ao login",
-    description: "Depois do cadastro, o usuário retorna ao login para acessar o painel.",
+    description: "Depois do cadastro, o usuÃ¡rio retorna ao login para acessar o painel.",
     iconClassName:
       "bg-[linear-gradient(135deg,rgba(53,92,125,0.94),rgba(31,47,80,0.92))] text-white",
   },
@@ -122,13 +123,13 @@ function validateSignupForm(formData: SignupFormData) {
   if (!normalizedEmail) {
     errors.email = "Informe seu e-mail.";
   } else if (!emailPattern.test(normalizedEmail)) {
-    errors.email = "Digite um e-mail válido.";
+    errors.email = "Digite um e-mail vÃ¡lido.";
   }
 
   if (!normalizedCpf) {
     errors.cpf = "Informe seu CPF.";
   } else if (!validateCpf(normalizedCpf)) {
-    errors.cpf = "Digite um CPF válido.";
+    errors.cpf = "Digite um CPF vÃ¡lido.";
   }
 
   if (!formData.password.trim()) {
@@ -186,22 +187,36 @@ export function CadastroUsuario() {
       name: formData.name.trim(),
       email: formData.email.trim().toLowerCase(),
       cpf: normalizeCpf(formData.cpf),
-      createdAt: new Date().toISOString(),
+      password: formData.password,
     };
 
-    await new Promise((resolve) => {
-      window.setTimeout(resolve, 350);
-    });
+    try {
+      const response = await signupWithApi(signupPayload);
 
-    window.localStorage.setItem(SIGNUP_STORAGE_KEY, JSON.stringify(signupPayload));
+      window.localStorage.setItem(
+        SIGNUP_STORAGE_KEY,
+        JSON.stringify({
+          name: response.user.name,
+          email: response.user.email,
+          cpf: response.user.cpf,
+          createdAt: new Date().toISOString(),
+        }),
+      );
 
-    navigate("/login", {
-      replace: true,
-      state: {
-        notice: "Cadastro salvo localmente. Agora você pode entrar no painel.",
-        registeredEmail: signupPayload.email,
-      },
-    });
+      navigate("/login", {
+        replace: true,
+        state: {
+          notice: response.message,
+          registeredEmail: response.user.email,
+        },
+      });
+    } catch (error) {
+      setFormErrors({
+        submit: error instanceof Error ? error.message : "NÃ£o foi possÃ­vel concluir o cadastro agora.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -212,8 +227,8 @@ export function CadastroUsuario() {
       <div className="relative mx-auto grid w-full max-w-6xl gap-6 lg:grid-cols-[minmax(0,1.05fr)_30rem]">
         <AuthShowcasePanel
           eyebrow="Primeiro acesso"
-          title="Crie sua conta e deixe o painel pronto para rodar com você."
-          description="O cadastro organiza os dados básicos de quem vai usar o sistema e prepara a entrada no painel logo em seguida."
+          title="Crie sua conta e deixe o painel pronto para rodar com vocÃª."
+          description="O cadastro organiza os dados bÃ¡sicos de quem vai usar o sistema e prepara a entrada no painel logo em seguida."
           features={signupFeatures}
         />
 
@@ -325,7 +340,7 @@ export function CadastroUsuario() {
 
             {formErrors.submit ? (
               <Alert variant="destructive" className="border-destructive/20 bg-destructive/5">
-                <AlertTitle>Cadastro inválido</AlertTitle>
+                <AlertTitle>Cadastro invÃ¡lido</AlertTitle>
                 <AlertDescription>{formErrors.submit}</AlertDescription>
               </Alert>
             ) : null}
