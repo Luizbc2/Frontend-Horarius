@@ -258,8 +258,8 @@ export function CadastroUsuario() {
       <div className="relative mx-auto grid w-full max-w-6xl gap-6 lg:grid-cols-[minmax(0,1.05fr)_30rem]">
         <AuthShowcasePanel
           eyebrow="Primeiro acesso"
-          title="Crie sua conta e deixe o painel pronto para rodar com vocÃª."
-          description="O cadastro organiza os dados bÃ¡sicos de quem vai usar o sistema e prepara a entrada no painel logo em seguida."
+          title="Crie sua conta e deixe o painel pronto para rodar com você."
+          description="O cadastro organiza os dados básicos de quem vai usar o sistema e prepara a entrada no painel logo em seguida."
           features={signupFeatures}
         />
 
