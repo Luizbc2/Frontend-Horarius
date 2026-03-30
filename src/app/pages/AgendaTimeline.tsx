@@ -43,7 +43,7 @@ const appointments = [
   {
     id: 1,
     time: "10:00",
-    client: "João Silva",
+    client: "Mariana Costa",
     service: "Corte + Barba",
     professional: "João",
     status: "confirmado",

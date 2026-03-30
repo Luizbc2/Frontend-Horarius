@@ -52,7 +52,7 @@ const appointments = [
     id: 1,
     date: "09/03/2026",
     time: "10:00",
-    client: "João Silva",
+    client: "Mariana Costa",
     service: "Corte + Barba",
     professional: "João",
     status: "confirmado",
@@ -124,15 +124,15 @@ export function AgendaLista() {
     if (selectedProfessional !== "todos" && apt.professional.toLowerCase() !== selectedProfessional) {
       return false;
     }
+
     if (selectedStatus !== "todos" && apt.status !== selectedStatus) {
       return false;
     }
-    if (
-      searchTerm &&
-      !`${apt.client} ${apt.service}`.toLowerCase().includes(searchTerm.toLowerCase())
-    ) {
+
+    if (searchTerm && !`${apt.client} ${apt.service}`.toLowerCase().includes(searchTerm.toLowerCase())) {
       return false;
     }
+
     return true;
   });
 
@@ -251,7 +251,9 @@ export function AgendaLista() {
                       <TableCell>{appointment.service}</TableCell>
                       <TableCell>{appointment.professional}</TableCell>
                       <TableCell>
-                        <span className={`${getStatusColor(appointment.status)} inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em]`}>
+                        <span
+                          className={`${getStatusColor(appointment.status)} inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em]`}
+                        >
                           {getStatusLabel(appointment.status)}
                         </span>
                       </TableCell>

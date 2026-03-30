@@ -150,7 +150,7 @@ function validateSignupForm(formData: SignupFormData) {
 }
 
 function mapSignupSuccessMessage(message: string) {
-  if (message === "User registered successfully.") {
+  if (message === "Usuário cadastrado com sucesso.") {
     return "Conta criada com sucesso. Agora voce ja pode entrar no painel.";
   }
 
@@ -165,22 +165,22 @@ function mapSignupApiError(error: unknown): SignupFormErrors {
   }
 
   switch (error.message) {
-    case "Email is already in use.":
+    case "E-mail já está em uso.":
       return {
         email: "Este e-mail ja esta em uso.",
         submit: "Use outro e-mail para continuar.",
       };
-    case "CPF is already in use.":
+    case "CPF já está em uso.":
       return {
         cpf: "Este CPF ja esta em uso.",
         submit: "Revise o CPF informado para continuar.",
       };
-    case "Invalid email format.":
+    case "Formato de e-mail inválido.":
       return {
         email: "Digite um e-mail valido.",
         submit: "Revise os campos destacados antes de continuar.",
       };
-    case "Invalid CPF.":
+    case "CPF inválido.":
       return {
         cpf: "Digite um CPF valido.",
         submit: "Revise os campos destacados antes de continuar.",
