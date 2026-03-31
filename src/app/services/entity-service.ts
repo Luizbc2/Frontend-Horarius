@@ -1,4 +1,5 @@
 import { api } from "../lib/api";
+import { DEFAULT_LIST_LIMIT, DEFAULT_LIST_PAGE, type ListQuery } from "../lib/list-query";
 
 export type PaginatedResponse<T> = {
   data: T[];
@@ -8,11 +9,7 @@ export type PaginatedResponse<T> = {
   totalPages: number;
 };
 
-export type ListQueryParams = {
-  page?: number;
-  limit?: number;
-  search?: string;
-};
+export type ListQueryParams = Partial<ListQuery>;
 
 type EntityServiceConfig = {
   resourcePath: string;
@@ -29,7 +26,11 @@ export const createEntityService = ({ resourcePath, token }: EntityServiceConfig
   list: <T>(query?: ListQueryParams) =>
     api.get<PaginatedResponse<T>>(resourcePath, {
       headers: createAuthHeaders(token),
-      query,
+      query: {
+        page: query?.page ?? DEFAULT_LIST_PAGE,
+        limit: query?.limit ?? DEFAULT_LIST_LIMIT,
+        search: query?.search?.trim() ?? "",
+      },
     }),
   create: <TResponse, TBody>(body: TBody) =>
     api.post<TResponse>(resourcePath, body, {
