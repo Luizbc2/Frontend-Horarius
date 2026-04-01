@@ -28,8 +28,6 @@ const initialFormData: ProfessionalFormData = {
   email: "",
   phone: "",
   specialty: "",
-  shiftStart: "",
-  shiftEnd: "",
   status: "ativo",
 };
 
@@ -56,8 +54,6 @@ export function ProfissionalFormulario() {
       email: existingProfessional.email,
       phone: existingProfessional.phone,
       specialty: existingProfessional.specialty,
-      shiftStart: existingProfessional.shiftStart,
-      shiftEnd: existingProfessional.shiftEnd,
       status: existingProfessional.status,
     });
   }, [existingProfessional]);
@@ -110,7 +106,7 @@ export function ProfissionalFormulario() {
     <PageShell
       eyebrow="Profissionais"
       title={isEditing ? "Editar profissional" : "Novo profissional"}
-      description="Formulário separado da listagem para criação e edição da equipe."
+      description="Cadastre os dados principais do profissional. Os horários serão configurados em uma etapa separada."
       actions={
         <Button variant="outline" asChild>
           <Link to="/profissionais">
@@ -130,7 +126,7 @@ export function ProfissionalFormulario() {
 
         <SectionCard
           title="Dados do profissional"
-          description="Todos os campos são obrigatórios para o cadastro e edição."
+          description="Preencha os dados principais agora. Depois você poderá configurar os horários de trabalho separadamente."
         >
           <div className="grid gap-4 md:grid-cols-2">
             <div className="grid gap-2">
@@ -179,32 +175,6 @@ export function ProfissionalFormulario() {
               {formErrors.specialty ? (
                 <p className="text-sm text-destructive">{formErrors.specialty}</p>
               ) : null}
-            </div>
-
-            <div className="grid gap-2">
-              <label htmlFor="professional-shift-start">Início do turno</label>
-              <Input
-                id="professional-shift-start"
-                type="time"
-                value={formData.shiftStart}
-                onChange={(event) => handleChange("shiftStart", event.target.value)}
-                aria-invalid={Boolean(formErrors.shiftStart)}
-              />
-              {formErrors.shiftStart ? (
-                <p className="text-sm text-destructive">{formErrors.shiftStart}</p>
-              ) : null}
-            </div>
-
-            <div className="grid gap-2">
-              <label htmlFor="professional-shift-end">Fim do turno</label>
-              <Input
-                id="professional-shift-end"
-                type="time"
-                value={formData.shiftEnd}
-                onChange={(event) => handleChange("shiftEnd", event.target.value)}
-                aria-invalid={Boolean(formErrors.shiftEnd)}
-              />
-              {formErrors.shiftEnd ? <p className="text-sm text-destructive">{formErrors.shiftEnd}</p> : null}
             </div>
 
             <div className="grid gap-2 md:col-span-2">

@@ -2,7 +2,7 @@ import { Mail, PencilLine, Phone, Trash2 } from "lucide-react";
 import { Link } from "react-router";
 
 import { formatPhone } from "../../data/clients";
-import type { Professional } from "../../data/professionals";
+import { getActiveWorkDaysCount, type Professional } from "../../data/professionals";
 import { Button } from "../ui/button";
 
 type ProfessionalListCardProps = {
@@ -14,6 +14,8 @@ export function ProfessionalListCard({
   professional,
   onDelete,
 }: ProfessionalListCardProps) {
+  const activeWorkDays = getActiveWorkDaysCount(professional);
+
   return (
     <article className="rounded-[1.4rem] border border-white/70 bg-white/64 p-5 shadow-[0_20px_45px_-30px_rgba(73,47,22,0.32)]">
       <div className="flex items-start justify-between gap-3">
@@ -26,7 +28,7 @@ export function ProfessionalListCard({
       <div className="mt-4 space-y-2 text-sm text-muted-foreground">
         <p>Especialidade: {professional.specialty}</p>
         <p>
-          Turno: {professional.shiftStart} às {professional.shiftEnd}
+          Horários: {activeWorkDays > 0 ? `${activeWorkDays} dia(s) ativo(s)` : "Ainda não configurados"}
         </p>
       </div>
 

@@ -2,15 +2,32 @@ import { createEntityId, loadCollection, saveCollection } from "./crudStorage";
 
 export type ProfessionalStatus = "ativo" | "ferias";
 
+export type WeekDayKey =
+  | "domingo"
+  | "segunda"
+  | "terca"
+  | "quarta"
+  | "quinta"
+  | "sexta"
+  | "sabado";
+
+export type ProfessionalWorkDay = {
+  day: WeekDayKey;
+  enabled: boolean;
+  startTime: string;
+  endTime: string;
+  breakStart: string;
+  breakEnd: string;
+};
+
 export type Professional = {
   id: number;
   name: string;
   email: string;
   phone: string;
   specialty: string;
-  shiftStart: string;
-  shiftEnd: string;
   status: ProfessionalStatus;
+  workDays: ProfessionalWorkDay[];
 };
 
 export type ProfessionalFormData = {
@@ -18,8 +35,6 @@ export type ProfessionalFormData = {
   email: string;
   phone: string;
   specialty: string;
-  shiftStart: string;
-  shiftEnd: string;
   status: ProfessionalStatus;
 };
 
@@ -27,41 +42,45 @@ export type ProfessionalFormErrors = Partial<Record<keyof ProfessionalFormData, 
 
 export const PROFESSIONALS_STORAGE_KEY = "horarius:profissionais";
 
-const initialProfessionals: Professional[] = [
-  {
-    id: 1,
-    name: "João",
-    email: "joao@horarius.com",
-    phone: "11998887766",
-    specialty: "Corte e barba",
-    shiftStart: "09:00",
-    shiftEnd: "18:00",
-    status: "ativo",
-  },
-  {
-    id: 2,
-    name: "Maria",
-    email: "maria@horarius.com",
-    phone: "11995554433",
-    specialty: "Coloração",
-    shiftStart: "10:00",
-    shiftEnd: "19:00",
-    status: "ativo",
-  },
-  {
-    id: 3,
-    name: "Rafael",
-    email: "rafael@horarius.com",
-    phone: "11997773322",
-    specialty: "Pigmentação",
-    shiftStart: "08:00",
-    shiftEnd: "17:00",
-    status: "ferias",
-  },
+export const WEEK_DAYS: WeekDayKey[] = [
+  "domingo",
+  "segunda",
+  "terca",
+  "quarta",
+  "quinta",
+  "sexta",
+  "sabado",
 ];
 
+const initialProfessionals: Professional[] = [];
+
+export function createDefaultWorkDays(): ProfessionalWorkDay[] {
+  return WEEK_DAYS.map((day) => ({
+    day,
+    enabled: false,
+    startTime: "09:00",
+    endTime: "18:00",
+    breakStart: "",
+    breakEnd: "",
+  }));
+}
+
+function normalizeProfessional(professional: Partial<Professional> & { id: number }) {
+  return {
+    id: professional.id,
+    name: professional.name ?? "",
+    email: professional.email ?? "",
+    phone: professional.phone ?? "",
+    specialty: professional.specialty ?? "",
+    status: professional.status === "ferias" ? "ferias" : "ativo",
+    workDays: Array.isArray(professional.workDays) ? professional.workDays : createDefaultWorkDays(),
+  } satisfies Professional;
+}
+
 export function loadProfessionals() {
-  return loadCollection(PROFESSIONALS_STORAGE_KEY, initialProfessionals);
+  return loadCollection(PROFESSIONALS_STORAGE_KEY, initialProfessionals).map((professional) =>
+    normalizeProfessional(professional),
+  );
 }
 
 export function getProfessionalById(professionalId: number) {
@@ -75,9 +94,8 @@ export function createProfessional(formData: ProfessionalFormData) {
     email: formData.email.trim().toLowerCase(),
     phone: formData.phone.trim(),
     specialty: formData.specialty.trim(),
-    shiftStart: formData.shiftStart,
-    shiftEnd: formData.shiftEnd,
     status: formData.status,
+    workDays: createDefaultWorkDays(),
   };
 
   saveCollection(PROFESSIONALS_STORAGE_KEY, [nextProfessional, ...loadProfessionals()]);
@@ -92,8 +110,6 @@ export function updateProfessional(professionalId: number, formData: Professiona
           email: formData.email.trim().toLowerCase(),
           phone: formData.phone.trim(),
           specialty: formData.specialty.trim(),
-          shiftStart: formData.shiftStart,
-          shiftEnd: formData.shiftEnd,
           status: formData.status,
         }
       : professional,
@@ -107,6 +123,10 @@ export function deleteProfessional(professionalId: number) {
     PROFESSIONALS_STORAGE_KEY,
     loadProfessionals().filter((professional) => professional.id !== professionalId),
   );
+}
+
+export function getActiveWorkDaysCount(professional: Pick<Professional, "workDays">) {
+  return professional.workDays.filter((workDay) => workDay.enabled).length;
 }
 
 export function validateProfessionalForm(formData: ProfessionalFormData) {
@@ -129,14 +149,6 @@ export function validateProfessionalForm(formData: ProfessionalFormData) {
 
   if (!formData.specialty.trim()) {
     errors.specialty = "Informe a especialidade principal.";
-  }
-
-  if (!formData.shiftStart) {
-    errors.shiftStart = "Informe o início do turno.";
-  }
-
-  if (!formData.shiftEnd) {
-    errors.shiftEnd = "Informe o fim do turno.";
   }
 
   return errors;

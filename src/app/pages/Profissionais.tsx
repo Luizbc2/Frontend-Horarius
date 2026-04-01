@@ -9,7 +9,12 @@ import { ProfessionalListCard } from "../components/professionals/ProfessionalLi
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { paginateItems } from "../data/pagination";
-import { deleteProfessional, loadProfessionals, type Professional } from "../data/professionals";
+import {
+  deleteProfessional,
+  getActiveWorkDaysCount,
+  loadProfessionals,
+  type Professional,
+} from "../data/professionals";
 
 const ITEMS_PER_PAGE = 6;
 
@@ -64,6 +69,9 @@ export function Profissionais() {
   );
 
   const activeCount = professionals.filter((professional) => professional.status === "ativo").length;
+  const configuredScheduleCount = professionals.filter(
+    (professional) => getActiveWorkDaysCount(professional) > 0,
+  ).length;
 
   const handleDelete = (professionalId: number) => {
     deleteProfessional(professionalId);
@@ -76,7 +84,7 @@ export function Profissionais() {
       <PageShell
         eyebrow="Equipe"
         title="Profissionais"
-        description="Listagem paginada da equipe com criação, edição e exclusão em tela própria."
+        description="Listagem da equipe com cadastro, edição e uma etapa separada para configurar horários."
         actions={
           <Button asChild>
             <Link to="/profissionais/novo">
@@ -101,9 +109,9 @@ export function Profissionais() {
             accent="sand"
           />
           <MetricCard
-            label="Turno médio"
-            value="9h"
-            helper="Jornada média cadastrada por profissional."
+            label="Com horários"
+            value={String(configuredScheduleCount)}
+            helper="Profissionais com pelo menos um dia ativo."
             icon={<Clock3 className="h-5 w-5" />}
             accent="coral"
           />
@@ -111,7 +119,7 @@ export function Profissionais() {
 
         <SectionCard
           title="Equipe"
-          description="Abra o formulário próprio para criar ou editar os dados do profissional."
+          description="Cadastre os dados principais agora e ajuste os horários em uma etapa separada."
           action={
             <div className="relative w-full max-w-sm">
               <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -130,7 +138,7 @@ export function Profissionais() {
               title={professionals.length === 0 ? "Nenhum profissional cadastrado" : "Nenhum profissional encontrado"}
               description={
                 professionals.length === 0
-                  ? "Cadastre o primeiro profissional para fechar o CRUD da equipe."
+                  ? "Cadastre o primeiro profissional para começar a montar sua equipe."
                   : "Nenhum registro bate com a busca atual."
               }
               action={
