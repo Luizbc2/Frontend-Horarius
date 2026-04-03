@@ -26,15 +26,15 @@ const loginFeatures = [
   },
   {
     icon: ShieldCheck,
-    title: "Sessão persistida",
+    title: "Não desloga do seu navegador",
     description: "O acesso continua salvo no navegador para você voltar ao painel depois.",
     iconClassName:
       "bg-[linear-gradient(135deg,rgba(211,140,86,0.94),rgba(168,103,53,0.92))] text-white",
   },
   {
     icon: LockKeyhole,
-    title: "Fluxo pronto",
-    description: "A tela de entrada já está preparada para receber a autenticação real.",
+    title: "Só realizar o registro uma vez",
+    description: "Após o cadastro, você pode acessar o painel sem precisar se registrar novamente.",
     iconClassName:
       "bg-[linear-gradient(135deg,rgba(53,92,125,0.94),rgba(31,47,80,0.92))] text-white",
   },
