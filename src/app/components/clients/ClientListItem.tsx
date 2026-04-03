@@ -1,11 +1,20 @@
 import { Mail, PencilLine, Phone, Trash2 } from "lucide-react";
 import { Link } from "react-router";
 
-import { formatPhone, type Client } from "../../data/clients";
+import { formatPhone } from "../../data/clients";
 import { Button } from "../ui/button";
 
+type ClientListView = {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+  notes: string;
+  createdAt?: string;
+};
+
 type ClientListItemProps = {
-  client: Client;
+  client: ClientListView;
   onDelete: (clientId: number) => void;
 };
 
@@ -19,13 +28,15 @@ export function ClientListItem({ client, onDelete }: ClientListItemProps) {
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h3 className="text-lg font-semibold text-foreground">{client.name}</h3>
-          <span className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-            {new Intl.DateTimeFormat("pt-BR", {
-              day: "2-digit",
-              month: "2-digit",
-              year: "numeric",
-            }).format(new Date(client.createdAt))}
-          </span>
+          {client.createdAt ? (
+            <span className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+              {new Intl.DateTimeFormat("pt-BR", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+              }).format(new Date(client.createdAt))}
+            </span>
+          ) : null}
         </div>
 
         <p className="mt-2 text-sm text-muted-foreground">{client.notes}</p>

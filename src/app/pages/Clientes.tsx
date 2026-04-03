@@ -3,13 +3,14 @@ import { Link, useLocation } from "react-router";
 import { Mail, MessageCircle, Phone, Plus, Search } from "lucide-react";
 import { Toaster, toast } from "sonner";
 
+import { useAuth } from "../auth/AuthContext";
 import { ClientListItem } from "../components/clients/ClientListItem";
 import { CrudPagination } from "../components/CrudPagination";
 import { EmptyStatePanel, MetricCard, PageShell, SectionCard } from "../components/PageShell";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
-import { deleteClient, loadClients, type Client } from "../data/clients";
-import { paginateItems } from "../data/pagination";
+import { getApiErrorMessage } from "../lib/api-error";
+import { createClientsService, type ClientApiItem } from "../services/clients";
 
 const ITEMS_PER_PAGE = 6;
 
@@ -18,14 +19,14 @@ type LocationState = {
 };
 
 export function Clientes() {
+  const { token } = useAuth();
   const location = useLocation();
-  const [clients, setClients] = useState<Client[]>([]);
+  const [clients, setClients] = useState<ClientApiItem[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-
-  useEffect(() => {
-    setClients(loadClients());
-  }, []);
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (typeof location.state === "object" && location.state !== null && "notice" in location.state) {
@@ -42,41 +43,73 @@ export function Clientes() {
     setCurrentPage(1);
   }, [searchTerm]);
 
-  const filteredClients = useMemo(() => {
-    const normalizedSearch = searchTerm.trim().toLowerCase();
+  useEffect(() => {
+    if (!token) {
+      setClients([]);
+      setTotalItems(0);
+      setTotalPages(1);
+      setIsLoading(false);
+      return;
+    }
 
-    return clients.filter((client) => {
-      if (!normalizedSearch) {
-        return true;
+    const clientsService = createClientsService(token);
+    let isMounted = true;
+
+    const loadClientsFromApi = async () => {
+      setIsLoading(true);
+
+      try {
+        const response = await clientsService.list({
+          page: currentPage,
+          limit: ITEMS_PER_PAGE,
+          search: searchTerm,
+        });
+
+        if (!isMounted) {
+          return;
+        }
+
+        setClients(response.data);
+        setTotalItems(response.totalItems);
+        setTotalPages(response.totalPages);
+      } catch (error) {
+        if (!isMounted) {
+          return;
+        }
+
+        setClients([]);
+        setTotalItems(0);
+        setTotalPages(1);
+        toast.error(getApiErrorMessage(error, "Nao foi possivel carregar os clientes."));
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
+    };
 
-      return [client.name, client.email, client.phone, client.notes]
-        .join(" ")
-        .toLowerCase()
-        .includes(normalizedSearch);
-    });
-  }, [clients, searchTerm]);
+    void loadClientsFromApi();
 
-  const { safePage, totalPages, paginatedItems } = paginateItems(
-    filteredClients,
-    currentPage,
-    ITEMS_PER_PAGE,
+    return () => {
+      isMounted = false;
+    };
+  }, [currentPage, searchTerm, token]);
+
+  const clientsWithEmailCount = useMemo(
+    () => clients.filter((client) => client.email.trim()).length,
+    [clients],
   );
 
-  const unreadCount = clients.filter((client) => client.unread).length;
-
   const handleDelete = (clientId: number) => {
-    deleteClient(clientId);
-    setClients(loadClients());
-    toast.success("Cliente removido com sucesso.");
+    toast.info(`A exclusao do cliente ${clientId} sera ligada no proximo passo.`);
   };
 
   return (
     <>
       <PageShell
-        eyebrow="Gestão"
+        eyebrow="Gestao"
         title="Clientes"
-        description="Lista paginada dos clientes cadastrados. Para criar ou editar, use as telas separadas do formulário."
+        description="Lista paginada dos clientes cadastrados. Para criar ou editar, use as telas separadas do formulario."
         actions={
           <Button asChild>
             <Link to="/clientes/novo">
@@ -89,21 +122,21 @@ export function Clientes() {
         <div className="metric-grid">
           <MetricCard
             label="Total"
-            value={String(clients.length)}
-            helper="Clientes cadastrados no armazenamento local."
+            value={String(totalItems)}
+            helper="Clientes retornados pela API."
             icon={<MessageCircle className="h-5 w-5" />}
           />
           <MetricCard
             label="Com e-mail"
-            value={String(clients.filter((client) => client.email).length)}
-            helper="Registros com contato por e-mail preenchido."
+            value={String(clientsWithEmailCount)}
+            helper="Clientes visiveis nesta pagina com e-mail preenchido."
             icon={<Mail className="h-5 w-5" />}
             accent="sand"
           />
           <MetricCard
-            label="Não lidas"
-            value={String(unreadCount)}
-            helper="Marcadores locais de retorno pendente."
+            label="Pagina atual"
+            value={String(currentPage)}
+            helper={`${clients.length} cliente${clients.length === 1 ? "" : "s"} exibido${clients.length === 1 ? "" : "s"} agora.`}
             icon={<Phone className="h-5 w-5" />}
             accent="coral"
           />
@@ -111,7 +144,7 @@ export function Clientes() {
 
         <SectionCard
           title="Listagem"
-          description="Use a busca para localizar um cliente e abra o formulário próprio para criar ou editar."
+          description="Use a busca para localizar um cliente e abra o formulario proprio para criar ou editar."
           action={
             <div className="relative w-full max-w-sm">
               <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -124,13 +157,19 @@ export function Clientes() {
             </div>
           }
         >
-          {filteredClients.length === 0 ? (
+          {isLoading ? (
             <EmptyStatePanel
               icon={<MessageCircle className="h-7 w-7" />}
-              title={clients.length === 0 ? "Nenhum cliente cadastrado" : "Nenhum cliente encontrado"}
+              title="Carregando clientes"
+              description="Buscando os registros no backend."
+            />
+          ) : clients.length === 0 ? (
+            <EmptyStatePanel
+              icon={<MessageCircle className="h-7 w-7" />}
+              title={totalItems === 0 ? "Nenhum cliente cadastrado" : "Nenhum cliente encontrado"}
               description={
-                clients.length === 0
-                  ? "Cadastre o primeiro cliente para começar o CRUD dessa área."
+                totalItems === 0
+                  ? "Cadastre o primeiro cliente para comecar o CRUD dessa area."
                   : "Nenhum registro bate com a busca atual."
               }
               action={
@@ -145,18 +184,18 @@ export function Clientes() {
           ) : (
             <>
               <div className="grid gap-3">
-                {paginatedItems.map((client) => (
+                {clients.map((client) => (
                   <ClientListItem key={client.id} client={client} onDelete={handleDelete} />
                 ))}
               </div>
 
               <CrudPagination
-                currentPage={safePage}
+                currentPage={currentPage}
                 totalPages={totalPages}
-                totalItems={filteredClients.length}
-                visibleItems={paginatedItems.length}
-                onPrevious={() => setCurrentPage(Math.max(1, safePage - 1))}
-                onNext={() => setCurrentPage(Math.min(totalPages, safePage + 1))}
+                totalItems={totalItems}
+                visibleItems={clients.length}
+                onPrevious={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                onNext={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
               />
             </>
           )}
