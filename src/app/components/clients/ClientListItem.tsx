@@ -55,7 +55,7 @@ export function ClientListItem({ client, onDelete }: ClientListItemProps) {
 
       <div className="flex flex-wrap gap-2 md:w-auto md:flex-col">
         <Button asChild variant="outline" size="sm">
-          <Link to={`/clientes/${client.id}/editar`}>
+          <Link to={`/clientes/${client.id}/editar`} state={{ client }}>
             <PencilLine className="h-4 w-4" />
             Editar
           </Link>

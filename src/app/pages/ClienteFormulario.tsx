@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { ArrowLeft, Save } from "lucide-react";
-import { Link, Navigate, useNavigate, useParams } from "react-router";
+import { Link, Navigate, useLocation, useNavigate, useParams } from "react-router";
 
 import { useAuth } from "../auth/AuthContext";
 import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert";
@@ -10,15 +10,13 @@ import { Input } from "../components/ui/input";
 import { Textarea } from "../components/ui/textarea";
 import {
   formatPhone,
-  getClientById,
   normalizePhone,
-  updateClient,
   validateClientForm,
   type ClientFormData,
   type ClientFormErrors,
 } from "../data/clients";
 import { getApiErrorMessage } from "../lib/api-error";
-import { createClientsService } from "../services/clients";
+import { createClientsService, type ClientApiItem } from "../services/clients";
 
 const initialFormData: ClientFormData = {
   name: "",
@@ -29,12 +27,14 @@ const initialFormData: ClientFormData = {
 
 export function ClienteFormulario() {
   const { token } = useAuth();
+  const location = useLocation();
   const navigate = useNavigate();
   const params = useParams();
   const clientId = params.clientId ? Number(params.clientId) : null;
+  const locationState = location.state as { client?: ClientApiItem } | null;
   const existingClient = useMemo(
-    () => (clientId === null ? null : getClientById(clientId)),
-    [clientId],
+    () => (clientId === null ? null : locationState?.client ?? null),
+    [clientId, locationState],
   );
   const [formData, setFormData] = useState<ClientFormData>(initialFormData);
   const [formErrors, setFormErrors] = useState<ClientFormErrors>({});
@@ -85,21 +85,34 @@ export function ClienteFormulario() {
       return;
     }
 
-    if (isEditing && clientId !== null) {
-      updateClient(clientId, formData);
-      navigate("/clientes", {
-        replace: true,
-        state: { notice: "Cliente atualizado com sucesso." },
-      });
-      return;
-    }
-
     if (!token) {
       setSubmitError("Sua sessao expirou. Entre novamente para continuar.");
       return;
     }
 
     setIsSubmitting(true);
+
+    if (isEditing && clientId !== null) {
+      const clientsService = createClientsService(token);
+      try {
+        const response = await clientsService.update(clientId, {
+          name: formData.name.trim(),
+          email: formData.email.trim().toLowerCase(),
+          phone: formData.phone.trim(),
+          notes: formData.notes.trim(),
+        });
+
+        navigate("/clientes", {
+          replace: true,
+          state: { notice: response.message },
+        });
+        return;
+      } catch (error) {
+        setSubmitError(getApiErrorMessage(error, "Nao foi possivel atualizar o cliente."));
+        setIsSubmitting(false);
+        return;
+      }
+    }
 
     try {
       const clientsService = createClientsService(token);
