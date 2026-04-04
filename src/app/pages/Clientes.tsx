@@ -28,6 +28,35 @@ export function Clientes() {
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
 
+  const loadClientsFromApi = async (
+    authToken: string,
+    page: number,
+    search: string,
+    options?: { silent?: boolean },
+  ) => {
+    const clientsService = createClientsService(authToken);
+
+    if (!options?.silent) {
+      setIsLoading(true);
+    }
+
+    try {
+      const response = await clientsService.list({
+        page,
+        limit: ITEMS_PER_PAGE,
+        search,
+      });
+
+      setClients(response.data);
+      setTotalItems(response.totalItems);
+      setTotalPages(response.totalPages);
+    } finally {
+      if (!options?.silent) {
+        setIsLoading(false);
+      }
+    }
+  };
+
   useEffect(() => {
     if (typeof location.state === "object" && location.state !== null && "notice" in location.state) {
       const state = location.state as LocationState;
@@ -52,26 +81,15 @@ export function Clientes() {
       return;
     }
 
-    const clientsService = createClientsService(token);
     let isMounted = true;
 
-    const loadClientsFromApi = async () => {
-      setIsLoading(true);
-
+    const loadCurrentPage = async () => {
       try {
-        const response = await clientsService.list({
-          page: currentPage,
-          limit: ITEMS_PER_PAGE,
-          search: searchTerm,
-        });
+        await loadClientsFromApi(token, currentPage, searchTerm);
 
         if (!isMounted) {
           return;
         }
-
-        setClients(response.data);
-        setTotalItems(response.totalItems);
-        setTotalPages(response.totalPages);
       } catch (error) {
         if (!isMounted) {
           return;
@@ -81,14 +99,10 @@ export function Clientes() {
         setTotalItems(0);
         setTotalPages(1);
         toast.error(getApiErrorMessage(error, "Nao foi possivel carregar os clientes."));
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
       }
     };
 
-    void loadClientsFromApi();
+    void loadCurrentPage();
 
     return () => {
       isMounted = false;
@@ -100,8 +114,30 @@ export function Clientes() {
     [clients],
   );
 
-  const handleDelete = (clientId: number) => {
-    toast.info(`A exclusao do cliente ${clientId} sera ligada no proximo passo.`);
+  const handleDelete = async (clientId: number) => {
+    if (!token) {
+      toast.error("Sua sessao expirou. Entre novamente para continuar.");
+      return;
+    }
+
+    try {
+      const clientsService = createClientsService(token);
+      const response = await clientsService.remove(clientId);
+      toast.success(response.message);
+
+      const nextTotalItems = Math.max(0, totalItems - 1);
+      const nextTotalPages = Math.max(1, Math.ceil(nextTotalItems / ITEMS_PER_PAGE));
+      const nextPage = Math.min(currentPage, nextTotalPages);
+
+      if (nextPage !== currentPage) {
+        setCurrentPage(nextPage);
+        return;
+      }
+
+      await loadClientsFromApi(token, nextPage, searchTerm, { silent: true });
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "Nao foi possivel excluir o cliente."));
+    }
   };
 
   return (
