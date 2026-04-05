@@ -1,0 +1,52 @@
+import { createEntityService, type ListQueryParams, type PaginatedResponse } from "./entity-service";
+
+export type ServiceApiItem = {
+  id: number;
+  name: string;
+  category: string;
+  durationMinutes: number;
+  price: number;
+  description: string;
+};
+
+export type CreateServiceRequest = {
+  name: string;
+  category: string;
+  durationMinutes: number;
+  price: number;
+  description: string;
+};
+
+export type UpdateServiceRequest = CreateServiceRequest;
+
+export type CreateServiceResponse = {
+  message: string;
+  service: ServiceApiItem;
+};
+
+export type UpdateServiceResponse = {
+  message: string;
+  service: ServiceApiItem;
+};
+
+export type DeleteServiceResponse = {
+  message: string;
+};
+
+export const createServicesService = (token: string) => {
+  const entityService = createEntityService({
+    resourcePath: "/services",
+    token,
+  });
+
+  return {
+    list: (query?: ListQueryParams) => entityService.list<ServiceApiItem>(query),
+    create: (body: CreateServiceRequest) =>
+      entityService.create<CreateServiceResponse, CreateServiceRequest>(body),
+    update: (id: number, body: UpdateServiceRequest) =>
+      entityService.update<UpdateServiceResponse, UpdateServiceRequest>(id, body),
+    remove: (id: number) => entityService.remove<DeleteServiceResponse>(id),
+  };
+};
+
+export type ServicesListResponse = PaginatedResponse<ServiceApiItem>;
