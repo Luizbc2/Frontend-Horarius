@@ -1,20 +1,16 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { ArrowLeft, Save } from "lucide-react";
-import { Link, Navigate, useNavigate, useParams } from "react-router";
+import { Link, Navigate, useLocation, useNavigate, useParams } from "react-router";
 
+import { useAuth } from "../auth/AuthContext";
 import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert";
 import { PageShell, SectionCard } from "../components/PageShell";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Textarea } from "../components/ui/textarea";
-import {
-  createService,
-  getServiceById,
-  updateService,
-  validateServiceForm,
-  type ServiceFormData,
-  type ServiceFormErrors,
-} from "../data/services";
+import { validateServiceForm, type ServiceFormData, type ServiceFormErrors } from "../data/services";
+import { getApiErrorMessage } from "../lib/api-error";
+import { createServicesService, type ServiceApiItem } from "../services/services";
 
 const initialFormData: ServiceFormData = {
   name: "",
@@ -25,15 +21,20 @@ const initialFormData: ServiceFormData = {
 };
 
 export function ServicoFormulario() {
+  const { token } = useAuth();
+  const location = useLocation();
   const navigate = useNavigate();
   const params = useParams();
   const serviceId = params.serviceId ? Number(params.serviceId) : null;
+  const locationState = location.state as { service?: ServiceApiItem } | null;
   const existingService = useMemo(
-    () => (serviceId === null ? null : getServiceById(serviceId)),
-    [serviceId],
+    () => (serviceId === null ? null : locationState?.service ?? null),
+    [locationState, serviceId],
   );
   const [formData, setFormData] = useState<ServiceFormData>(initialFormData);
   const [formErrors, setFormErrors] = useState<ServiceFormErrors>({});
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isEditing = serviceId !== null;
 
@@ -65,41 +66,80 @@ export function ServicoFormulario() {
       ...currentErrors,
       [field]: undefined,
     }));
+
+    setSubmitError(null);
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     const errors = validateServiceForm(formData);
     setFormErrors(errors);
+    setSubmitError(null);
 
     if (Object.keys(errors).length > 0) {
       return;
     }
 
-    if (isEditing && serviceId !== null) {
-      updateService(serviceId, formData);
-      navigate("/servicos", {
-        replace: true,
-        state: { notice: "Serviço atualizado com sucesso." },
-      });
+    if (!token) {
+      setSubmitError("Sua sessao expirou. Entre novamente para continuar.");
       return;
     }
 
-    createService(formData);
-    navigate("/servicos", {
-      replace: true,
-      state: { notice: "Serviço cadastrado com sucesso." },
-    });
+    setIsSubmitting(true);
+
+    if (isEditing && serviceId !== null) {
+      const servicesService = createServicesService(token);
+
+      try {
+        const response = await servicesService.update(serviceId, {
+          name: formData.name.trim(),
+          category: formData.category.trim(),
+          durationMinutes: Number(formData.durationMinutes),
+          price: Number(formData.price.replace(",", ".")),
+          description: formData.description.trim(),
+        });
+
+        navigate("/servicos", {
+          replace: true,
+          state: { notice: response.message },
+        });
+        return;
+      } catch (error) {
+        setSubmitError(getApiErrorMessage(error, "Nao foi possivel atualizar o servico."));
+        setIsSubmitting(false);
+        return;
+      }
+    }
+
+    try {
+      const servicesService = createServicesService(token);
+      const response = await servicesService.create({
+        name: formData.name.trim(),
+        category: formData.category.trim(),
+        durationMinutes: Number(formData.durationMinutes),
+        price: Number(formData.price.replace(",", ".")),
+        description: formData.description.trim(),
+      });
+
+      navigate("/servicos", {
+        replace: true,
+        state: { notice: response.message },
+      });
+    } catch (error) {
+      setSubmitError(getApiErrorMessage(error, "Nao foi possivel cadastrar o servico."));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const hasErrors = Object.keys(formErrors).length > 0;
 
   return (
     <PageShell
-      eyebrow="Serviços"
-      title={isEditing ? "Editar serviço" : "Novo serviço"}
-      description="Formulário separado da listagem para manter o CRUD completo."
+      eyebrow="Servicos"
+      title={isEditing ? "Editar servico" : "Novo servico"}
+      description="Formulario separado da listagem para manter o CRUD completo."
       actions={
         <Button variant="outline" asChild>
           <Link to="/servicos">
@@ -112,14 +152,21 @@ export function ServicoFormulario() {
       <form noValidate onSubmit={handleSubmit} className="grid gap-6">
         {hasErrors ? (
           <Alert variant="destructive" className="border-destructive/20 bg-destructive/5">
-            <AlertTitle>Formulário inválido</AlertTitle>
+            <AlertTitle>Formulario invalido</AlertTitle>
             <AlertDescription>Revise os campos marcados antes de salvar.</AlertDescription>
           </Alert>
         ) : null}
 
+        {submitError ? (
+          <Alert variant="destructive" className="border-destructive/20 bg-destructive/5">
+            <AlertTitle>Nao foi possivel salvar</AlertTitle>
+            <AlertDescription>{submitError}</AlertDescription>
+          </Alert>
+        ) : null}
+
         <SectionCard
-          title="Dados do serviço"
-          description="Todos os campos são obrigatórios para o cadastro e edição."
+          title="Dados do servico"
+          description="Todos os campos sao obrigatorios para o cadastro e edicao."
         >
           <div className="grid gap-4 md:grid-cols-2">
             <div className="grid gap-2">
@@ -141,13 +188,11 @@ export function ServicoFormulario() {
                 onChange={(event) => handleChange("category", event.target.value)}
                 aria-invalid={Boolean(formErrors.category)}
               />
-              {formErrors.category ? (
-                <p className="text-sm text-destructive">{formErrors.category}</p>
-              ) : null}
+              {formErrors.category ? <p className="text-sm text-destructive">{formErrors.category}</p> : null}
             </div>
 
             <div className="grid gap-2">
-              <label htmlFor="service-duration">Duração (minutos)</label>
+              <label htmlFor="service-duration">Duracao (minutos)</label>
               <Input
                 id="service-duration"
                 type="number"
@@ -162,7 +207,7 @@ export function ServicoFormulario() {
             </div>
 
             <div className="grid gap-2">
-              <label htmlFor="service-price">Preço</label>
+              <label htmlFor="service-price">Preco</label>
               <Input
                 id="service-price"
                 type="number"
@@ -176,7 +221,7 @@ export function ServicoFormulario() {
             </div>
 
             <div className="grid gap-2 md:col-span-2">
-              <label htmlFor="service-description">Descrição</label>
+              <label htmlFor="service-description">Descricao</label>
               <Textarea
                 id="service-description"
                 rows={4}
@@ -192,9 +237,9 @@ export function ServicoFormulario() {
         </SectionCard>
 
         <div className="flex flex-wrap gap-3">
-          <Button type="submit">
+          <Button type="submit" disabled={isSubmitting}>
             <Save className="h-4 w-4" />
-            {isEditing ? "Salvar alterações" : "Cadastrar serviço"}
+            {isSubmitting ? "Salvando..." : isEditing ? "Salvar alteracoes" : "Cadastrar servico"}
           </Button>
           <Button type="button" variant="outline" asChild>
             <Link to="/servicos">Cancelar</Link>

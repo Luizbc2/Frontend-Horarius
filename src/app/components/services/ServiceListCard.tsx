@@ -42,7 +42,7 @@ export function ServiceListCard({ service, onDelete }: ServiceListCardProps) {
 
       <div className="mt-6 flex gap-2 border-t border-[rgba(74,52,34,0.08)] pt-4">
         <Button variant="outline" className="flex-1" asChild>
-          <Link to={`/servicos/${service.id}/editar`}>
+          <Link to={`/servicos/${service.id}/editar`} state={{ service }}>
             <Edit className="h-4 w-4" />
             Editar
           </Link>
