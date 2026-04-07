@@ -123,8 +123,30 @@ export function Servicos() {
       ? Math.round(services.reduce((total, service) => total + service.durationMinutes, 0) / services.length)
       : 0;
 
-  const handleDelete = (serviceId: number) => {
-    toast.info(`A exclusao do servico ${serviceId} sera ligada no proximo passo.`);
+  const handleDelete = async (serviceId: number) => {
+    if (!token) {
+      toast.error("Sua sessao expirou. Entre novamente para continuar.");
+      return;
+    }
+
+    try {
+      const servicesService = createServicesService(token);
+      const response = await servicesService.remove(serviceId);
+      toast.success(response.message);
+
+      const nextTotalItems = Math.max(0, totalItems - 1);
+      const nextTotalPages = Math.max(1, Math.ceil(nextTotalItems / ITEMS_PER_PAGE));
+      const nextPage = Math.min(currentPage, nextTotalPages);
+
+      if (nextPage !== currentPage) {
+        setCurrentPage(nextPage);
+        return;
+      }
+
+      await loadServicesFromApi(token, nextPage, searchTerm, { silent: true });
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "Nao foi possivel excluir o servico."));
+    }
   };
 
   return (
