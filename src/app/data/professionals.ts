@@ -40,6 +40,15 @@ export type ProfessionalFormData = {
 
 export type ProfessionalFormErrors = Partial<Record<keyof ProfessionalFormData, string>>;
 
+export type ProfessionalBaseData = {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+  specialty: string;
+  status: string;
+};
+
 export const PROFESSIONALS_STORAGE_KEY = "horarius:profissionais";
 
 export const WEEK_DAYS: WeekDayKey[] = [
@@ -91,6 +100,26 @@ export function loadProfessionals() {
   return loadCollection(PROFESSIONALS_STORAGE_KEY, initialProfessionals).map((professional) =>
     normalizeProfessional(professional),
   );
+}
+
+export function syncProfessionalsBaseData(professionals: ProfessionalBaseData[]) {
+  const currentProfessionals = loadProfessionals();
+  const currentProfessionalsById = new Map(
+    currentProfessionals.map((professional) => [professional.id, professional]),
+  );
+
+  const nextProfessionals = professionals.map((professional) => {
+    const existingProfessional = currentProfessionalsById.get(professional.id);
+
+    return normalizeProfessional({
+      ...professional,
+      workDays: existingProfessional?.workDays ?? createDefaultWorkDays(),
+    });
+  });
+
+  saveCollection(PROFESSIONALS_STORAGE_KEY, nextProfessionals);
+
+  return nextProfessionals;
 }
 
 export function getProfessionalById(professionalId: number) {

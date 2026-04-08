@@ -1,20 +1,21 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router";
 import { Clock3, Plus, Scissors, Search, Sparkles } from "lucide-react";
 import { Toaster, toast } from "sonner";
 
+import { useAuth } from "../auth/AuthContext";
 import { CrudPagination } from "../components/CrudPagination";
 import { EmptyStatePanel, MetricCard, PageShell, SectionCard } from "../components/PageShell";
 import { ProfessionalListCard } from "../components/professionals/ProfessionalListCard";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
-import { paginateItems } from "../data/pagination";
 import {
-  deleteProfessional,
   getActiveWorkDaysCount,
-  loadProfessionals,
+  syncProfessionalsBaseData,
   type Professional,
 } from "../data/professionals";
+import { getApiErrorMessage } from "../lib/api-error";
+import { createProfessionalsService } from "../services/professionals";
 
 const ITEMS_PER_PAGE = 6;
 
@@ -23,14 +24,48 @@ type LocationState = {
 };
 
 export function Profissionais() {
+  const { token } = useAuth();
   const location = useLocation();
   const [professionals, setProfessionals] = useState<Professional[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [pageSize, setPageSize] = useState(ITEMS_PER_PAGE);
+  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    setProfessionals(loadProfessionals());
-  }, []);
+  const loadProfessionalsFromApi = async (
+    authToken: string,
+    page: number,
+    search: string,
+    options?: { silent?: boolean },
+  ) => {
+    const professionalsService = createProfessionalsService(authToken);
+
+    if (!options?.silent) {
+      setIsLoading(true);
+    }
+
+    try {
+      const response = await professionalsService.list({
+        page,
+        limit: ITEMS_PER_PAGE,
+        search,
+      });
+
+      const syncedProfessionals = syncProfessionalsBaseData(response.data);
+
+      setProfessionals(syncedProfessionals);
+      setCurrentPage(response.page);
+      setPageSize(response.limit);
+      setTotalItems(response.totalItems);
+      setTotalPages(response.totalPages);
+    } finally {
+      if (!options?.silent) {
+        setIsLoading(false);
+      }
+    }
+  };
 
   useEffect(() => {
     if (typeof location.state === "object" && location.state !== null && "notice" in location.state) {
@@ -47,26 +82,42 @@ export function Profissionais() {
     setCurrentPage(1);
   }, [searchTerm]);
 
-  const filteredProfessionals = useMemo(() => {
-    const normalizedSearch = searchTerm.trim().toLowerCase();
+  useEffect(() => {
+    if (!token) {
+      setProfessionals([]);
+      setTotalItems(0);
+      setTotalPages(1);
+      setIsLoading(false);
+      return;
+    }
 
-    return professionals.filter((professional) => {
-      if (!normalizedSearch) {
-        return true;
+    let isMounted = true;
+
+    const loadCurrentPage = async () => {
+      try {
+        await loadProfessionalsFromApi(token, currentPage, searchTerm);
+
+        if (!isMounted) {
+          return;
+        }
+      } catch (error) {
+        if (!isMounted) {
+          return;
+        }
+
+        setProfessionals([]);
+        setTotalItems(0);
+        setTotalPages(1);
+        toast.error(getApiErrorMessage(error, "Nao foi possivel carregar os profissionais."));
       }
+    };
 
-      return [professional.name, professional.specialty, professional.email, professional.status]
-        .join(" ")
-        .toLowerCase()
-        .includes(normalizedSearch);
-    });
-  }, [professionals, searchTerm]);
+    void loadCurrentPage();
 
-  const { safePage, totalPages, paginatedItems } = paginateItems(
-    filteredProfessionals,
-    currentPage,
-    ITEMS_PER_PAGE,
-  );
+    return () => {
+      isMounted = false;
+    };
+  }, [currentPage, searchTerm, token]);
 
   const activeCount = professionals.filter((professional) => professional.status === "ativo").length;
   const configuredScheduleCount = professionals.filter(
@@ -74,9 +125,7 @@ export function Profissionais() {
   ).length;
 
   const handleDelete = (professionalId: number) => {
-    deleteProfessional(professionalId);
-    setProfessionals(loadProfessionals());
-    toast.success("Profissional removido com sucesso.");
+    toast.info(`A exclusao do profissional ${professionalId} sera ligada no proximo passo.`);
   };
 
   return (
@@ -97,21 +146,21 @@ export function Profissionais() {
         <div className="metric-grid">
           <MetricCard
             label="Total"
-            value={String(professionals.length)}
-            helper="Profissionais cadastrados."
+            value={String(totalItems)}
+            helper="Profissionais retornados pela API."
             icon={<Scissors className="h-5 w-5" />}
           />
           <MetricCard
             label="Ativos"
             value={String(activeCount)}
-            helper="Disponíveis para atendimento."
+            helper="Profissionais ativos nesta pagina."
             icon={<Sparkles className="h-5 w-5" />}
             accent="sand"
           />
           <MetricCard
-            label="Com horários"
+            label="Com horarios"
             value={String(configuredScheduleCount)}
-            helper="Profissionais com rotina de trabalho definida."
+            helper="Profissionais desta pagina com rotina local definida."
             icon={<Clock3 className="h-5 w-5" />}
             accent="coral"
           />
@@ -119,7 +168,7 @@ export function Profissionais() {
 
         <SectionCard
           title="Equipe"
-          description="Os dados principais ficam aqui. Os horários de trabalho podem ser ajustados depois, profissional por profissional."
+          description="Os dados principais ficam aqui. Os horarios de trabalho podem ser ajustados depois, profissional por profissional."
           action={
             <div className="relative w-full max-w-sm">
               <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -132,13 +181,19 @@ export function Profissionais() {
             </div>
           }
         >
-          {filteredProfessionals.length === 0 ? (
+          {isLoading ? (
             <EmptyStatePanel
               icon={<Scissors className="h-7 w-7" />}
-              title={professionals.length === 0 ? "Nenhum profissional cadastrado" : "Nenhum profissional encontrado"}
+              title="Carregando profissionais"
+              description="Buscando a equipe no backend."
+            />
+          ) : professionals.length === 0 ? (
+            <EmptyStatePanel
+              icon={<Scissors className="h-7 w-7" />}
+              title={totalItems === 0 ? "Nenhum profissional cadastrado" : "Nenhum profissional encontrado"}
               description={
-                professionals.length === 0
-                  ? "Cadastre o primeiro profissional para começar a montar sua equipe."
+                totalItems === 0
+                  ? "Cadastre o primeiro profissional para comecar a montar sua equipe."
                   : "Nenhum registro bate com a busca atual."
               }
               action={
@@ -153,7 +208,7 @@ export function Profissionais() {
           ) : (
             <>
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {paginatedItems.map((professional) => (
+                {professionals.map((professional) => (
                   <ProfessionalListCard
                     key={professional.id}
                     professional={professional}
@@ -163,12 +218,13 @@ export function Profissionais() {
               </div>
 
               <CrudPagination
-                currentPage={safePage}
+                currentPage={currentPage}
                 totalPages={totalPages}
-                totalItems={filteredProfessionals.length}
-                visibleItems={paginatedItems.length}
-                onPrevious={() => setCurrentPage(Math.max(1, safePage - 1))}
-                onNext={() => setCurrentPage(Math.min(totalPages, safePage + 1))}
+                totalItems={totalItems}
+                visibleItems={professionals.length}
+                pageSize={pageSize}
+                onPrevious={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                onNext={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
               />
             </>
           )}
