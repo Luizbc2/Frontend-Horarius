@@ -124,8 +124,30 @@ export function Profissionais() {
     (professional) => getActiveWorkDaysCount(professional) > 0,
   ).length;
 
-  const handleDelete = (professionalId: number) => {
-    toast.info(`A exclusao do profissional ${professionalId} sera ligada no proximo passo.`);
+  const handleDelete = async (professionalId: number) => {
+    if (!token) {
+      toast.error("Sua sessao expirou. Entre novamente para continuar.");
+      return;
+    }
+
+    try {
+      const professionalsService = createProfessionalsService(token);
+      const response = await professionalsService.remove(professionalId);
+      toast.success(response.message);
+
+      const nextTotalItems = Math.max(0, totalItems - 1);
+      const nextTotalPages = Math.max(1, Math.ceil(nextTotalItems / ITEMS_PER_PAGE));
+      const nextPage = Math.min(currentPage, nextTotalPages);
+
+      if (nextPage !== currentPage) {
+        setCurrentPage(nextPage);
+        return;
+      }
+
+      await loadProfessionalsFromApi(token, nextPage, searchTerm, { silent: true });
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "Nao foi possivel excluir o profissional."));
+    }
   };
 
   return (
