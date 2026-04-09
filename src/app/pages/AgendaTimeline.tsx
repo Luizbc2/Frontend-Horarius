@@ -14,6 +14,7 @@ import {
   Users,
 } from "lucide-react";
 
+import { useAuth } from "../auth/AuthContext";
 import { Button } from "../components/ui/button";
 import { EmptyStatePanel, MetricCard, PageShell, SectionCard } from "../components/PageShell";
 import {
@@ -40,7 +41,9 @@ import {
   SelectValue,
 } from "../components/ui/select";
 import { cn } from "../components/ui/utils";
+import { getApiErrorMessage } from "../lib/api-error";
 import { loadProfessionals, type Professional } from "../data/professionals";
+import { createAppointmentsService } from "../services/appointments";
 
 type AppointmentStatus = "confirmado" | "pendente" | "cancelado";
 
@@ -119,78 +122,34 @@ function timeToMinutes(time: string) {
   return hours * 60 + minutes;
 }
 
-function createTimelineAppointments(professionals: Professional[]): Appointment[] {
-  if (professionals.length === 0) {
-    return [];
-  }
+function formatDateForApi(date: Date) {
+  const year = date.getFullYear();
+  const month = padTime(date.getMonth() + 1);
+  const day = padTime(date.getDate());
 
-  const [firstProfessional, secondProfessional] = professionals;
+  return `${year}-${month}-${day}`;
+}
 
-  return [
-    {
-      id: 1,
-      time: "09:00",
-      client: "Murilo Pereira Macedo",
-      service: "Corte + barba",
-      professionalId: String(firstProfessional.id),
-      status: "confirmado",
-    },
-    {
-      id: 2,
-      time: "09:50",
-      client: "Pedro Santos",
-      service: "Barba",
-      professionalId: String(firstProfessional.id),
-      status: "confirmado",
-    },
-    {
-      id: 3,
-      time: "10:30",
-      client: "Marcos Lima",
-      service: "Corte",
-      professionalId: String(firstProfessional.id),
-      status: "confirmado",
-    },
-    {
-      id: 4,
-      time: "11:10",
-      client: "Rafael Costa",
-      service: "Sobrancelha",
-      professionalId: String(firstProfessional.id),
-      status: "pendente",
-    },
-    ...(secondProfessional
-      ? [
-          {
-            id: 5,
-            time: "09:30",
-            client: "Juliana Barros",
-            service: "Escova",
-            professionalId: String(secondProfessional.id),
-            status: "confirmado" as const,
-          },
-          {
-            id: 6,
-            time: "11:00",
-            client: "Carla Souza",
-            service: "Corte feminino",
-            professionalId: String(secondProfessional.id),
-            status: "pendente" as const,
-          },
-        ]
-      : []),
-  ];
+function formatAppointmentTime(scheduledAt: string) {
+  return new Date(scheduledAt).toLocaleTimeString("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
 }
 
 export function AgendaTimeline() {
+  const { token } = useAuth();
   const [selectedDate, setSelectedDate] = useState(new Date("2026-04-01T10:00:00"));
   const [selectedProfessional, setSelectedProfessional] = useState("todos");
   const [selectedStatus, setSelectedStatus] = useState("todos");
   const [professionals, setProfessionals] = useState<Professional[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [isLoadingAppointments, setIsLoadingAppointments] = useState(false);
   const [draggedAppointmentId, setDraggedAppointmentId] = useState<number | null>(null);
   const [dragOverSlot, setDragOverSlot] = useState<string | null>(null);
   const [editingAppointmentId, setEditingAppointmentId] = useState<number | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
   const [appointmentDraft, setAppointmentDraft] = useState<AppointmentDraft>({
     client: "",
     service: "",
@@ -204,14 +163,58 @@ export function AgendaTimeline() {
   }, []);
 
   useEffect(() => {
-    setAppointments((currentAppointments) => {
-      if (currentAppointments.length > 0 || professionals.length === 0) {
-        return currentAppointments;
-      }
+    if (!token) {
+      setAppointments([]);
+      return;
+    }
 
-      return createTimelineAppointments(professionals);
-    });
-  }, [professionals]);
+    let isMounted = true;
+
+    const loadAppointments = async () => {
+      setIsLoadingAppointments(true);
+
+      try {
+        const appointmentsService = createAppointmentsService(token);
+        const response = await appointmentsService.list({
+          date: formatDateForApi(selectedDate),
+          limit: 200,
+          page: 1,
+        });
+
+        if (!isMounted) {
+          return;
+        }
+
+        setAppointments(
+          response.data.map((appointment) => ({
+            id: appointment.id,
+            time: formatAppointmentTime(appointment.scheduledAt),
+            client: appointment.clientName,
+            service: appointment.serviceName,
+            professionalId: String(appointment.professionalId),
+            status: appointment.status,
+          })),
+        );
+      } catch (error) {
+        if (!isMounted) {
+          return;
+        }
+
+        setAppointments([]);
+        toast.error(getApiErrorMessage(error, "Nao foi possivel carregar os agendamentos."));
+      } finally {
+        if (isMounted) {
+          setIsLoadingAppointments(false);
+        }
+      }
+    };
+
+    void loadAppointments();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedDate, token, refreshKey]);
 
   const timeSlots = useMemo(() => generateTimeSlots(), []);
   const timelineHeight = timeSlots.length * SLOT_HEIGHT;
@@ -454,7 +457,7 @@ export function AgendaTimeline() {
       description="Visualize os horários lado a lado por profissional e acompanhe os encaixes do dia com mais clareza."
       actions={
         <>
-          <Button variant="outline">
+          <Button variant="outline" onClick={() => setRefreshKey((currentKey) => currentKey + 1)}>
             <RefreshCw className="h-4 w-4" />
             Recarregar
           </Button>
@@ -511,7 +514,7 @@ export function AgendaTimeline() {
               <p className="mt-1 text-sm text-muted-foreground">{selectedDate.toLocaleDateString("pt-BR")}</p>
             </div>
 
-            <Button variant="outline">
+            <Button variant="outline" onClick={() => setRefreshKey((currentKey) => currentKey + 1)}>
               <RefreshCw className="h-4 w-4" />
               Recarregar
             </Button>
@@ -560,6 +563,12 @@ export function AgendaTimeline() {
             icon={<Users className="h-7 w-7" />}
             title="Nenhum profissional disponível"
             description="Cadastre pelo menos um profissional para montar a timeline da agenda com colunas reais."
+          />
+        ) : isLoadingAppointments ? (
+          <EmptyStatePanel
+            icon={<RefreshCw className="h-7 w-7" />}
+            title="Carregando agenda"
+            description="Estamos buscando os agendamentos do dia para montar a timeline."
           />
         ) : visibleProfessionals.length === 0 ? (
           <EmptyStatePanel
