@@ -316,10 +316,24 @@ export function AgendaTimeline() {
   };
 
   const handleDeleteAppointment = (appointmentId: number) => {
-    setAppointments((currentAppointments) =>
-      currentAppointments.filter((appointment) => appointment.id !== appointmentId),
-    );
-    toast.success("Agendamento removido.");
+    if (!token) {
+      toast.error("Sua sessao expirou. Entre novamente para continuar.");
+      return;
+    }
+
+    const appointmentsService = createAppointmentsService(token);
+
+    void appointmentsService
+      .remove(appointmentId)
+      .then((response) => {
+        setAppointments((currentAppointments) =>
+          currentAppointments.filter((appointment) => appointment.id !== appointmentId),
+        );
+        toast.success(response.message);
+      })
+      .catch((error) => {
+        toast.error(getApiErrorMessage(error, "Nao foi possivel excluir o agendamento."));
+      });
   };
 
   const handleDropAppointment = (professionalId: string, time: string) => {
