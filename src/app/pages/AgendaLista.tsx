@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
+import { toast } from "sonner";
 import {
   CalendarRange,
   ChevronLeft,
@@ -10,6 +11,7 @@ import {
   TimerReset,
 } from "lucide-react";
 
+import { useAuth } from "../auth/AuthContext";
 import { Button } from "../components/ui/button";
 import { MetricCard, PageShell, SectionCard } from "../components/PageShell";
 import {
@@ -34,65 +36,116 @@ import {
   DropdownMenuTrigger,
 } from "../components/ui/dropdown-menu";
 import { Input } from "../components/ui/input";
+import { getApiErrorMessage } from "../lib/api-error";
+import { loadProfessionals } from "../data/professionals";
+import {
+  createAppointmentsService,
+  type AppointmentApiItem,
+  type AppointmentStatus,
+} from "../services/appointments";
 
-type AppointmentStatus = "confirmado" | "pendente" | "cancelado";
-
-type Appointment = {
+type AgendaListItem = {
   id: number;
   date: string;
   time: string;
   client: string;
-  service: string;
   professional: string;
+  service: string;
   status: AppointmentStatus;
 };
 
-const appointments = [
-  {
-    id: 1,
-    date: "09/03/2026",
-    time: "10:00",
-    client: "Mariana Costa",
-    service: "Corte + Barba",
-    professional: "João",
-    status: "confirmado",
-  },
-  {
-    id: 2,
-    date: "09/03/2026",
-    time: "14:30",
-    client: "Pedro Santos",
-    service: "Corte Simples",
-    professional: "João",
-    status: "pendente",
-  },
-  {
-    id: 3,
-    date: "10/03/2026",
-    time: "09:00",
-    client: "Carlos Oliveira",
-    service: "Barba",
-    professional: "João",
-    status: "confirmado",
-  },
-  {
-    id: 4,
-    date: "10/03/2026",
-    time: "15:00",
-    client: "Rafael Costa",
-    service: "Corte + Barba",
-    professional: "João",
-    status: "cancelado",
-  },
-] satisfies Appointment[];
+function padDatePart(value: number) {
+  return String(value).padStart(2, "0");
+}
+
+function getTodayDateValue() {
+  const currentDate = new Date();
+
+  return `${currentDate.getFullYear()}-${padDatePart(currentDate.getMonth() + 1)}-${padDatePart(currentDate.getDate())}`;
+}
+
+function formatAppointmentForList(appointment: AppointmentApiItem): AgendaListItem {
+  const scheduledDate = new Date(appointment.scheduledAt);
+
+  return {
+    id: appointment.id,
+    date: scheduledDate.toLocaleDateString("pt-BR"),
+    time: scheduledDate.toLocaleTimeString("pt-BR", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }),
+    client: appointment.clientName,
+    professional: appointment.professionalName,
+    service: appointment.serviceName,
+    status: appointment.status,
+  };
+}
 
 export function AgendaLista() {
-  const [selectedDate] = useState("2026-03-09");
+  const { token } = useAuth();
+  const [selectedDate, setSelectedDate] = useState(getTodayDateValue);
   const [selectedProfessional, setSelectedProfessional] = useState("todos");
   const [selectedStatus, setSelectedStatus] = useState("todos");
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [appointments, setAppointments] = useState<AgendaListItem[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
   const itemsPerPage = 10;
+  const professionals = useMemo(() => loadProfessionals(), []);
+
+  useEffect(() => {
+    if (!token) {
+      setAppointments([]);
+      return;
+    }
+
+    let isMounted = true;
+
+    const loadAppointments = async () => {
+      setIsLoading(true);
+
+      try {
+        const appointmentsService = createAppointmentsService(token);
+        const response = await appointmentsService.list({
+          date: selectedDate,
+          limit: 200,
+          page: 1,
+          professionalId:
+            selectedProfessional !== "todos" ? Number(selectedProfessional) : undefined,
+          status: selectedStatus !== "todos" ? (selectedStatus as AppointmentStatus) : undefined,
+        });
+
+        if (!isMounted) {
+          return;
+        }
+
+        setAppointments(response.data.map(formatAppointmentForList));
+      } catch (error) {
+        if (!isMounted) {
+          return;
+        }
+
+        setAppointments([]);
+        toast.error(getApiErrorMessage(error, "Não foi possível carregar os agendamentos."));
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    void loadAppointments();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [refreshKey, selectedDate, selectedProfessional, selectedStatus, token]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedDate, selectedProfessional, selectedStatus]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -120,16 +173,13 @@ export function AgendaLista() {
     }
   };
 
-  const filteredAppointments = appointments.filter((apt) => {
-    if (selectedProfessional !== "todos" && apt.professional.toLowerCase() !== selectedProfessional) {
-      return false;
-    }
-
-    if (selectedStatus !== "todos" && apt.status !== selectedStatus) {
-      return false;
-    }
-
-    if (searchTerm && !`${apt.client} ${apt.service}`.toLowerCase().includes(searchTerm.toLowerCase())) {
+  const filteredAppointments = appointments.filter((appointment) => {
+    if (
+      searchTerm &&
+      !`${appointment.client} ${appointment.service} ${appointment.professional}`
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase())
+    ) {
       return false;
     }
 
@@ -143,15 +193,29 @@ export function AgendaLista() {
   const confirmedCount = filteredAppointments.filter((appointment) => appointment.status === "confirmado").length;
   const pendingCount = filteredAppointments.filter((appointment) => appointment.status === "pendente").length;
 
+  const handleRefresh = async () => {
+    setRefreshKey((currentKey) => currentKey + 1);
+  };
+
+  const handleUnavailableAction = (label: string) => {
+    toast.error(`${label} ainda vai ser ligada na API nos próximos passos.`);
+  };
+
   return (
     <PageShell
       eyebrow="Gestão diária"
       title="Lista de agendamentos"
       description="Filtre a operação por profissional, status e busca textual para encontrar rapidamente qualquer atendimento do dia."
       actions={
-        <Button variant="secondary" asChild>
-          <Link to="/agenda/timeline">Abrir timeline</Link>
-        </Button>
+        <>
+          <Button variant="outline" onClick={handleRefresh}>
+            <RefreshCw className="h-4 w-4" />
+            Recarregar
+          </Button>
+          <Button variant="secondary" asChild>
+            <Link to="/agenda/timeline">Abrir timeline</Link>
+          </Button>
+        </>
       }
     >
       <div className="metric-grid">
@@ -182,7 +246,7 @@ export function AgendaLista() {
         description="Combine data, profissional e status para reduzir a lista e agir mais rápido sobre cada atendimento."
       >
         <div className="grid gap-3 lg:grid-cols-[1.05fr_1fr_1fr_1.2fr_auto]">
-          <Input type="date" value={selectedDate} readOnly />
+          <Input type="date" value={selectedDate} onChange={(event) => setSelectedDate(event.target.value)} />
 
           <Select value={selectedProfessional} onValueChange={setSelectedProfessional}>
             <SelectTrigger>
@@ -190,7 +254,11 @@ export function AgendaLista() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="todos">Todos profissionais</SelectItem>
-              <SelectItem value="joão">João</SelectItem>
+              {professionals.map((professional) => (
+                <SelectItem key={professional.id} value={String(professional.id)}>
+                  {professional.name}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
 
@@ -211,12 +279,12 @@ export function AgendaLista() {
             <Input
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
-              placeholder="Buscar cliente ou serviço"
+              placeholder="Buscar cliente, serviço ou profissional"
               className="pl-11"
             />
           </div>
 
-          <Button variant="outline" className="w-full lg:w-auto">
+          <Button variant="outline" className="w-full lg:w-auto" onClick={handleRefresh}>
             <Search className="h-4 w-4" />
             Buscar
           </Button>
@@ -236,7 +304,13 @@ export function AgendaLista() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {paginatedAppointments.length > 0 ? (
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="py-12 text-center text-muted-foreground">
+                      Carregando agendamentos...
+                    </TableCell>
+                  </TableRow>
+                ) : paginatedAppointments.length > 0 ? (
                   paginatedAppointments.map((appointment) => (
                     <TableRow key={appointment.id}>
                       <TableCell>
@@ -265,10 +339,21 @@ export function AgendaLista() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem>Ver detalhes</DropdownMenuItem>
-                            <DropdownMenuItem>Editar</DropdownMenuItem>
-                            <DropdownMenuItem>Confirmar</DropdownMenuItem>
-                            <DropdownMenuItem variant="destructive">Cancelar</DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => handleUnavailableAction("Os detalhes")}>
+                              Ver detalhes
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => handleUnavailableAction("A edição")}>
+                              Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => handleUnavailableAction("A confirmação")}>
+                              Confirmar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              variant="destructive"
+                              onSelect={() => handleUnavailableAction("O cancelamento")}
+                            >
+                              Cancelar
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
