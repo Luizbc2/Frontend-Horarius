@@ -1,4 +1,4 @@
-import { apiRequest } from "../lib/api";
+import { api } from "../lib/api";
 import type { PaginatedResponse } from "./entity-service";
 
 export type AppointmentStatus = "confirmado" | "pendente" | "cancelado";
@@ -51,61 +51,43 @@ export type DeleteAppointmentResponse = {
 
 export type AppointmentsListResponse = PaginatedResponse<AppointmentApiItem>;
 
-function createAppointmentsQueryParams(query?: ListAppointmentsQuery) {
+const createAuthHeaders = (token: string) => ({
+  Authorization: `Bearer ${token}`,
+});
+
+function createAppointmentsQuery(query?: ListAppointmentsQuery) {
   if (!query) {
     return undefined;
   }
 
-  const searchParams = new URLSearchParams();
-
-  if (query.date) {
-    searchParams.set("date", query.date);
-  }
-
-  if (typeof query.limit === "number") {
-    searchParams.set("limit", String(query.limit));
-  }
-
-  if (typeof query.page === "number") {
-    searchParams.set("page", String(query.page));
-  }
-
-  if (typeof query.professionalId === "number") {
-    searchParams.set("professionalId", String(query.professionalId));
-  }
-
-  if (query.status) {
-    searchParams.set("status", query.status);
-  }
-
-  return searchParams;
+  return {
+    date: query.date,
+    limit: query.limit,
+    page: query.page,
+    professionalId: query.professionalId,
+    status: query.status,
+  };
 }
 
 export const createAppointmentsService = (token: string) => ({
   list: (query?: ListAppointmentsQuery) =>
-    apiRequest<AppointmentsListResponse>("/appointments", {
-      method: "GET",
-      queryParams: createAppointmentsQueryParams(query),
-      token,
+    api.get<AppointmentsListResponse>("/appointments", {
+      headers: createAuthHeaders(token),
+      query: createAppointmentsQuery(query),
     }),
 
   create: (body: CreateAppointmentRequest) =>
-    apiRequest<CreateAppointmentResponse>("/appointments", {
-      method: "POST",
-      body,
-      token,
+    api.post<CreateAppointmentResponse>("/appointments", body, {
+      headers: createAuthHeaders(token),
     }),
 
   update: (id: number, body: UpdateAppointmentRequest) =>
-    apiRequest<UpdateAppointmentResponse>(`/appointments/${id}`, {
-      method: "PUT",
-      body,
-      token,
+    api.put<UpdateAppointmentResponse>(`/appointments/${id}`, body, {
+      headers: createAuthHeaders(token),
     }),
 
   remove: (id: number) =>
-    apiRequest<DeleteAppointmentResponse>(`/appointments/${id}`, {
-      method: "DELETE",
-      token,
+    api.delete<DeleteAppointmentResponse>(`/appointments/${id}`, {
+      headers: createAuthHeaders(token),
     }),
 });
