@@ -489,6 +489,11 @@ export function AgendaTimeline() {
       return;
     }
 
+    if (!token) {
+      toast.error("Sua sessao expirou. Entre novamente para continuar.");
+      return;
+    }
+
     const normalizedClient = appointmentDraft.client.trim();
     const normalizedService = appointmentDraft.service.trim();
 
@@ -509,23 +514,63 @@ export function AgendaTimeline() {
       return;
     }
 
-    setAppointments((currentAppointments) =>
-      currentAppointments.map((appointment) =>
-        appointment.id === editingAppointmentId
-          ? {
-              ...appointment,
-              client: normalizedClient,
-              service: normalizedService,
-              time: appointmentDraft.time,
-              professionalId: appointmentDraft.professionalId,
-              status: appointmentDraft.status,
-            }
-          : appointment,
-      ),
+    const currentAppointment = appointments.find((appointment) => appointment.id === editingAppointmentId);
+
+    if (!currentAppointment) {
+      toast.error("Agendamento nao encontrado.");
+      return;
+    }
+
+    const previousAppointments = appointments;
+    const nextAppointments = appointments.map((appointment) =>
+      appointment.id === editingAppointmentId
+        ? {
+            ...appointment,
+            client: normalizedClient,
+            service: normalizedService,
+            time: appointmentDraft.time,
+            professionalId: appointmentDraft.professionalId,
+            status: appointmentDraft.status,
+          }
+        : appointment,
     );
 
-    toast.success("Agendamento atualizado.");
+    setAppointments(nextAppointments);
     resetEditDialog();
+
+    const appointmentsService = createAppointmentsService(token);
+
+    void appointmentsService
+      .update(editingAppointmentId, {
+        clientId: currentAppointment.clientId,
+        professionalId: Number(appointmentDraft.professionalId),
+        serviceId: currentAppointment.serviceId,
+        scheduledAt: buildScheduledAt(selectedDate, appointmentDraft.time),
+        status: appointmentDraft.status,
+        notes: currentAppointment.notes,
+      })
+      .then((response) => {
+        setAppointments((currentAppointments) =>
+          currentAppointments.map((appointment) =>
+            appointment.id === editingAppointmentId
+              ? {
+                  ...appointment,
+                  client: response.appointment.clientName,
+                  service: response.appointment.serviceName,
+                  time: formatAppointmentTime(response.appointment.scheduledAt),
+                  professionalId: String(response.appointment.professionalId),
+                  status: response.appointment.status,
+                  notes: response.appointment.notes,
+                }
+              : appointment,
+          ),
+        );
+        toast.success(response.message);
+      })
+      .catch((error) => {
+        setAppointments(previousAppointments);
+        toast.error(getApiErrorMessage(error, "Nao foi possivel atualizar o agendamento."));
+      });
   };
 
   return (
