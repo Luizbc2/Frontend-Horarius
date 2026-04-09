@@ -46,9 +46,14 @@ import {
 
 type AgendaListItem = {
   id: number;
+  clientId: number;
   date: string;
+  notes: string;
+  professionalId: number;
   time: string;
   client: string;
+  scheduledAt: string;
+  serviceId: number;
   professional: string;
   service: string;
   status: AppointmentStatus;
@@ -69,13 +74,18 @@ function formatAppointmentForList(appointment: AppointmentApiItem): AgendaListIt
 
   return {
     id: appointment.id,
+    clientId: appointment.clientId,
     date: scheduledDate.toLocaleDateString("pt-BR"),
+    notes: appointment.notes,
+    professionalId: appointment.professionalId,
     time: scheduledDate.toLocaleTimeString("pt-BR", {
       hour: "2-digit",
       minute: "2-digit",
       hour12: false,
     }),
     client: appointment.clientName,
+    scheduledAt: appointment.scheduledAt,
+    serviceId: appointment.serviceId,
     professional: appointment.professionalName,
     service: appointment.serviceName,
     status: appointment.status,
@@ -195,6 +205,44 @@ export function AgendaLista() {
 
   const handleRefresh = async () => {
     setRefreshKey((currentKey) => currentKey + 1);
+  };
+
+  const handleUpdateAppointmentStatus = async (
+    appointment: AgendaListItem,
+    status: AppointmentStatus,
+  ) => {
+    if (!token) {
+      toast.error("Sua sessão expirou. Entre novamente para continuar.");
+      return;
+    }
+
+    const appointmentsService = createAppointmentsService(token);
+
+    try {
+      const response = await appointmentsService.update(appointment.id, {
+        clientId: appointment.clientId,
+        professionalId: appointment.professionalId,
+        serviceId: appointment.serviceId,
+        scheduledAt: appointment.scheduledAt,
+        status,
+        notes: appointment.notes,
+      });
+
+      setAppointments((currentAppointments) =>
+        currentAppointments.map((currentAppointment) =>
+          currentAppointment.id === appointment.id
+            ? {
+                ...currentAppointment,
+                status: response.appointment.status,
+              }
+            : currentAppointment,
+        ),
+      );
+
+      toast.success(response.message);
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "Não foi possível atualizar o agendamento."));
+    }
   };
 
   const handleUnavailableAction = (label: string) => {
@@ -338,23 +386,25 @@ export function AgendaLista() {
                               <MoreVertical className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onSelect={() => handleUnavailableAction("Os detalhes")}>
-                              Ver detalhes
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onSelect={() => handleUnavailableAction("A edição")}>
-                              Editar
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onSelect={() => handleUnavailableAction("A confirmação")}>
-                              Confirmar
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              variant="destructive"
-                              onSelect={() => handleUnavailableAction("O cancelamento")}
-                            >
-                              Cancelar
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onSelect={() => handleUnavailableAction("Os detalhes")}>
+                                Ver detalhes
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onSelect={() => handleUnavailableAction("A edição")}>
+                                Editar
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onSelect={() => void handleUpdateAppointmentStatus(appointment, "confirmado")}
+                              >
+                                Confirmar
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                variant="destructive"
+                                onSelect={() => void handleUpdateAppointmentStatus(appointment, "cancelado")}
+                              >
+                                Cancelar
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
                     </TableRow>
