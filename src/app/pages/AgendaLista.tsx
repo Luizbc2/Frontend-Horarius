@@ -36,7 +36,7 @@ import {
   DropdownMenuTrigger,
 } from "../components/ui/dropdown-menu";
 import { Input } from "../components/ui/input";
-import { getApiErrorMessage } from "../lib/api-error";
+import { getApiErrorMessage, isMissingAuthTokenError } from "../lib/api-error";
 import { loadProfessionals } from "../data/professionals";
 import {
   createAppointmentsService,
@@ -138,7 +138,10 @@ export function AgendaLista() {
         }
 
         setAppointments([]);
-        toast.error(getApiErrorMessage(error, "Não foi possível carregar os agendamentos."));
+
+        if (!isMissingAuthTokenError(error)) {
+          toast.error(getApiErrorMessage(error, "Não foi possível carregar os agendamentos."));
+        }
       } finally {
         if (isMounted) {
           setIsLoading(false);

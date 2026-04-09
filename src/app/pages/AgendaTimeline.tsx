@@ -42,7 +42,7 @@ import {
   SelectValue,
 } from "../components/ui/select";
 import { cn } from "../components/ui/utils";
-import { getApiErrorMessage } from "../lib/api-error";
+import { getApiErrorMessage, isMissingAuthTokenError } from "../lib/api-error";
 import { loadProfessionals, type Professional } from "../data/professionals";
 import { createAppointmentsService } from "../services/appointments";
 import { createClientsService, type ClientApiItem } from "../services/clients";
@@ -281,7 +281,10 @@ export function AgendaTimeline() {
         }
 
         setAppointments([]);
-        toast.error(getApiErrorMessage(error, "Nao foi possivel carregar os agendamentos."));
+
+        if (!isMissingAuthTokenError(error)) {
+          toast.error(getApiErrorMessage(error, "Nao foi possivel carregar os agendamentos."));
+        }
       } finally {
         if (isMounted) {
           setIsLoadingAppointments(false);
