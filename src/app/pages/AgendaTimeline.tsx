@@ -49,11 +49,14 @@ type AppointmentStatus = "confirmado" | "pendente" | "cancelado";
 
 type Appointment = {
   id: number;
+  clientId: number;
   time: string;
   client: string;
+  serviceId: number;
   service: string;
   professionalId: string;
   status: AppointmentStatus;
+  notes: string;
 };
 
 type AppointmentDraft = {
@@ -138,6 +141,15 @@ function formatAppointmentTime(scheduledAt: string) {
   });
 }
 
+function buildScheduledAt(date: Date, time: string) {
+  const [hours, minutes] = time.split(":").map(Number);
+  const scheduledDate = new Date(date);
+
+  scheduledDate.setHours(hours, minutes, 0, 0);
+
+  return scheduledDate.toISOString();
+}
+
 export function AgendaTimeline() {
   const { token } = useAuth();
   const [selectedDate, setSelectedDate] = useState(new Date("2026-04-01T10:00:00"));
@@ -188,11 +200,14 @@ export function AgendaTimeline() {
         setAppointments(
           response.data.map((appointment) => ({
             id: appointment.id,
+            clientId: appointment.clientId,
             time: formatAppointmentTime(appointment.scheduledAt),
             client: appointment.clientName,
+            serviceId: appointment.serviceId,
             service: appointment.serviceName,
             professionalId: String(appointment.professionalId),
             status: appointment.status,
+            notes: appointment.notes,
           })),
         );
       } catch (error) {
@@ -341,6 +356,13 @@ export function AgendaTimeline() {
       return;
     }
 
+    if (!token) {
+      toast.error("Sua sessao expirou. Entre novamente para continuar.");
+      setDraggedAppointmentId(null);
+      setDragOverSlot(null);
+      return;
+    }
+
     const draggedAppointment = appointments.find((appointment) => appointment.id === draggedAppointmentId);
 
     if (!draggedAppointment) {
@@ -357,27 +379,52 @@ export function AgendaTimeline() {
     );
 
     if (targetAppointment) {
-      setAppointments((currentAppointments) =>
-        currentAppointments.map((appointment) => {
-          if (appointment.id === draggedAppointmentId) {
-            return {
-              ...appointment,
-              professionalId: targetAppointment.professionalId,
-              time: targetAppointment.time,
-            };
-          }
+      const previousAppointments = appointments;
+      const nextAppointments = appointments.map((appointment) => {
+        if (appointment.id === draggedAppointmentId) {
+          return {
+            ...appointment,
+            professionalId: targetAppointment.professionalId,
+            time: targetAppointment.time,
+          };
+        }
 
-          if (appointment.id === targetAppointment.id) {
-            return {
-              ...appointment,
-              professionalId: draggedAppointment.professionalId,
-              time: draggedAppointment.time,
-            };
-          }
+        if (appointment.id === targetAppointment.id) {
+          return {
+            ...appointment,
+            professionalId: draggedAppointment.professionalId,
+            time: draggedAppointment.time,
+          };
+        }
 
-          return appointment;
+        return appointment;
+      });
+
+      setAppointments(nextAppointments);
+
+      const appointmentsService = createAppointmentsService(token);
+
+      void Promise.all([
+        appointmentsService.update(draggedAppointment.id, {
+          clientId: draggedAppointment.clientId,
+          professionalId: Number(targetAppointment.professionalId),
+          serviceId: draggedAppointment.serviceId,
+          scheduledAt: buildScheduledAt(selectedDate, targetAppointment.time),
+          status: draggedAppointment.status,
+          notes: draggedAppointment.notes,
         }),
-      );
+        appointmentsService.update(targetAppointment.id, {
+          clientId: targetAppointment.clientId,
+          professionalId: Number(draggedAppointment.professionalId),
+          serviceId: targetAppointment.serviceId,
+          scheduledAt: buildScheduledAt(selectedDate, draggedAppointment.time),
+          status: targetAppointment.status,
+          notes: targetAppointment.notes,
+        }),
+      ]).catch((error) => {
+        setAppointments(previousAppointments);
+        toast.error(getApiErrorMessage(error, "Nao foi possivel trocar os agendamentos."));
+      });
 
       setDraggedAppointmentId(null);
       setDragOverSlot(null);
@@ -404,17 +451,34 @@ export function AgendaTimeline() {
       return;
     }
 
-    setAppointments((currentAppointments) =>
-      currentAppointments.map((appointment) =>
-        appointment.id === draggedAppointmentId
-          ? {
-              ...appointment,
-              professionalId,
-              time,
-            }
-          : appointment,
-      ),
+    const previousAppointments = appointments;
+    const nextAppointments = appointments.map((appointment) =>
+      appointment.id === draggedAppointmentId
+        ? {
+            ...appointment,
+            professionalId,
+            time,
+          }
+        : appointment,
     );
+
+    setAppointments(nextAppointments);
+
+    const appointmentsService = createAppointmentsService(token);
+
+    void appointmentsService
+      .update(draggedAppointment.id, {
+        clientId: draggedAppointment.clientId,
+        professionalId: Number(professionalId),
+        serviceId: draggedAppointment.serviceId,
+        scheduledAt: buildScheduledAt(selectedDate, time),
+        status: draggedAppointment.status,
+        notes: draggedAppointment.notes,
+      })
+      .catch((error) => {
+        setAppointments(previousAppointments);
+        toast.error(getApiErrorMessage(error, "Nao foi possivel mover o agendamento."));
+      });
 
     setDraggedAppointmentId(null);
     setDragOverSlot(null);
