@@ -245,6 +245,21 @@ export function AgendaTimeline() {
   }, [searchParams]);
 
   useEffect(() => {
+    if (!isCreateDialogOpen) {
+      return;
+    }
+
+    if (selectedProfessional === "todos") {
+      return;
+    }
+
+    setNewAppointmentDraft((currentDraft) => ({
+      ...currentDraft,
+      professionalId: selectedProfessional,
+    }));
+  }, [isCreateDialogOpen, selectedProfessional]);
+
+  useEffect(() => {
     if (!token) {
       setClients([]);
       setServices([]);
