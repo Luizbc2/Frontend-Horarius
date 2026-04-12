@@ -168,7 +168,7 @@ function buildScheduledAt(date: Date, time: string) {
 export function AgendaTimeline() {
   const { token } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [selectedDate, setSelectedDate] = useState(new Date("2026-04-01T10:00:00"));
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedProfessional, setSelectedProfessional] = useState("todos");
   const [selectedStatus, setSelectedStatus] = useState("todos");
   const [clients, setClients] = useState<ClientApiItem[]>([]);
