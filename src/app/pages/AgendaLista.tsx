@@ -47,7 +47,7 @@ import {
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { getApiErrorMessage, isMissingAuthTokenError } from "../lib/api-error";
-import { loadProfessionals } from "../data/professionals";
+import { createProfessionalsService, type ProfessionalApiItem } from "../services/professionals";
 import {
   createAppointmentsService,
   type AppointmentApiItem,
@@ -120,6 +120,7 @@ export function AgendaLista() {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [clients, setClients] = useState<ClientApiItem[]>([]);
+  const [professionals, setProfessionals] = useState<ProfessionalApiItem[]>([]);
   const [services, setServices] = useState<ServiceApiItem[]>([]);
   const [appointments, setAppointments] = useState<AgendaListItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -136,11 +137,10 @@ export function AgendaLista() {
   });
   const [refreshKey, setRefreshKey] = useState(0);
   const itemsPerPage = 10;
-  const professionals = useMemo(() => loadProfessionals(), []);
-
   useEffect(() => {
     if (!token) {
       setClients([]);
+      setProfessionals([]);
       setServices([]);
       return;
     }
@@ -149,9 +149,10 @@ export function AgendaLista() {
 
     const loadSupportData = async () => {
       try {
-        const [clientsResponse, servicesResponse] = await Promise.all([
+        const [clientsResponse, servicesResponse, professionalsResponse] = await Promise.all([
           createClientsService(token).list({ page: 1, limit: 200 }),
           createServicesService(token).list({ page: 1, limit: 200 }),
+          createProfessionalsService(token).list({ page: 1, limit: 200 }),
         ]);
 
         if (!isMounted) {
@@ -160,13 +161,16 @@ export function AgendaLista() {
 
         setClients(clientsResponse.data);
         setServices(servicesResponse.data);
+        setProfessionals(professionalsResponse.data);
       } catch (error) {
         if (!isMounted) {
           return;
         }
 
         if (!isMissingAuthTokenError(error)) {
-          toast.error(getApiErrorMessage(error, "Nao foi possivel carregar clientes e servicos."));
+          toast.error(
+            getApiErrorMessage(error, "Nao foi possivel carregar clientes, profissionais e servicos."),
+          );
         }
       }
     };

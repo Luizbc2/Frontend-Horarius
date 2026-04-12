@@ -43,7 +43,7 @@ import {
 } from "../components/ui/select";
 import { cn } from "../components/ui/utils";
 import { getApiErrorMessage, isMissingAuthTokenError } from "../lib/api-error";
-import { loadProfessionals, type Professional } from "../data/professionals";
+import { createProfessionalsService, type ProfessionalApiItem } from "../services/professionals";
 import { createAppointmentsService } from "../services/appointments";
 import { createClientsService, type ClientApiItem } from "../services/clients";
 import { createServicesService, type ServiceApiItem } from "../services/services";
@@ -172,7 +172,7 @@ export function AgendaTimeline() {
   const [selectedProfessional, setSelectedProfessional] = useState("todos");
   const [selectedStatus, setSelectedStatus] = useState("todos");
   const [clients, setClients] = useState<ClientApiItem[]>([]);
-  const [professionals, setProfessionals] = useState<Professional[]>([]);
+  const [professionals, setProfessionals] = useState<ProfessionalApiItem[]>([]);
   const [services, setServices] = useState<ServiceApiItem[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [isLoadingAppointments, setIsLoadingAppointments] = useState(false);
@@ -201,8 +201,42 @@ export function AgendaTimeline() {
   });
 
   useEffect(() => {
-    setProfessionals(loadProfessionals());
-  }, []);
+    if (!token) {
+      setProfessionals([]);
+      return;
+    }
+
+    let isMounted = true;
+
+    const loadProfessionals = async () => {
+      try {
+        const response = await createProfessionalsService(token).list({
+          page: 1,
+          limit: 200,
+        });
+
+        if (!isMounted) {
+          return;
+        }
+
+        setProfessionals(response.data);
+      } catch (error) {
+        if (!isMounted) {
+          return;
+        }
+
+        if (!isMissingAuthTokenError(error)) {
+          toast.error(getApiErrorMessage(error, "Nao foi possivel carregar os profissionais."));
+        }
+      }
+    };
+
+    void loadProfessionals();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [token]);
 
   useEffect(() => {
     if (searchParams.get("novo") === "1") {
