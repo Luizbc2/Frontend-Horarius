@@ -639,7 +639,7 @@ export function AgendaTimeline() {
     });
 
     if (hasConflict) {
-      toast.error("Esse horário já está ocupado para esse profissional.");
+      toast.error("Esse horario ja esta ocupado para esse profissional.");
       setDraggedAppointmentId(null);
       setDragOverSlot(null);
       return;
@@ -771,7 +771,7 @@ export function AgendaTimeline() {
     <PageShell
       eyebrow="Agenda"
       title="Timeline do dia"
-      description="Visualize os horários lado a lado por profissional e acompanhe os encaixes do dia com mais clareza."
+      description="Visualize os horarios lado a lado por profissional e acompanhe os encaixes do dia com mais clareza."
       actions={
         <>
           <Button
@@ -810,12 +810,12 @@ export function AgendaTimeline() {
         <MetricCard
           label="Confirmados"
           value={String(confirmedCount)}
-          helper="Clientes já confirmados."
+          helper="Clientes ja confirmados."
           icon={<Users className="h-5 w-5" />}
           accent="sand"
         />
         <MetricCard
-          label="Ocupação"
+          label="Ocupacao"
           value={`${occupancy}%`}
           helper={`${pendingCount} pendente${pendingCount === 1 ? "" : "s"} no momento.`}
           icon={<Clock3 className="h-5 w-5" />}
@@ -889,12 +889,12 @@ export function AgendaTimeline() {
 
       <SectionCard
         title="Grade da agenda"
-        description="Cada coluna representa um profissional e os cartões entram na altura exata do horário agendado."
+        description="Cada coluna representa um profissional e os cartoes entram na altura exata do horario agendado."
       >
         {professionals.length === 0 ? (
           <EmptyStatePanel
             icon={<Users className="h-7 w-7" />}
-            title="Nenhum profissional disponível"
+            title="Nenhum profissional disponivel"
             description="Cadastre pelo menos um profissional para montar a timeline da agenda com colunas reais."
           />
         ) : isLoadingAppointments ? (
@@ -1049,7 +1049,7 @@ export function AgendaTimeline() {
                                     <button
                                       type="button"
                                       className="rounded-full p-1 text-muted-foreground transition hover:bg-black/5 hover:text-foreground"
-                                      aria-label="Ações do agendamento"
+                                      aria-label="Acoes do agendamento"
                                       draggable={false}
                                       onPointerDown={(event) => event.stopPropagation()}
                                       onClick={(event) => event.stopPropagation()}
@@ -1106,7 +1106,7 @@ export function AgendaTimeline() {
           <DialogHeader>
             <DialogTitle>Novo agendamento</DialogTitle>
             <DialogDescription>
-              Selecione cliente, serviço, profissional e horário para lançar um novo atendimento.
+              Selecione cliente, servico, profissional e horario para lancar um novo atendimento.
             </DialogDescription>
           </DialogHeader>
 
@@ -1204,7 +1204,7 @@ export function AgendaTimeline() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="timeline-new-service">Serviço</Label>
+              <Label htmlFor="timeline-new-service">Servico</Label>
               <Select
                 value={newAppointmentDraft.serviceId}
                 onValueChange={(value) =>
@@ -1215,7 +1215,7 @@ export function AgendaTimeline() {
                 }
               >
                 <SelectTrigger id="timeline-new-service">
-                  <SelectValue placeholder="Escolha o serviço" />
+                  <SelectValue placeholder="Escolha o servico" />
                 </SelectTrigger>
                 <SelectContent>
                   {services.map((service) => (
@@ -1229,7 +1229,7 @@ export function AgendaTimeline() {
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="timeline-new-time">Horário</Label>
+                <Label htmlFor="timeline-new-time">Horario</Label>
                 <Select
                   value={newAppointmentDraft.time}
                   onValueChange={(value) =>
@@ -1240,7 +1240,7 @@ export function AgendaTimeline() {
                   }
                 >
                   <SelectTrigger id="timeline-new-time">
-                    <SelectValue placeholder="Escolha o horário" />
+                    <SelectValue placeholder="Escolha o horario" />
                   </SelectTrigger>
                   <SelectContent>
                     {timeSlots.map((time) => (
@@ -1433,3 +1433,5 @@ export function AgendaTimeline() {
     </PageShell>
   );
 }
+
+

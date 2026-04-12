@@ -45,7 +45,7 @@ const initialClients: Client[] = [
     name: "Ana Martins",
     email: "ana@cliente.com",
     phone: "11977775555",
-    notes: "Gosta de confirmar o horário por WhatsApp.",
+    notes: "Gosta de confirmar o horario por WhatsApp.",
     createdAt: "2026-03-24T09:15:00.000Z",
     unread: false,
   },
@@ -128,16 +128,18 @@ export function validateClientForm(formData: ClientFormData) {
   if (!formData.email.trim()) {
     errors.email = "Informe o e-mail do cliente.";
   } else if (!emailPattern.test(formData.email.trim())) {
-    errors.email = "Digite um e-mail válido.";
+    errors.email = "Digite um e-mail valido.";
   }
 
   if (normalizePhone(formData.phone).length < 10) {
-    errors.phone = "Digite um telefone válido com DDD.";
+    errors.phone = "Digite um telefone valido com DDD.";
   }
 
   if (!formData.notes.trim()) {
-    errors.notes = "Escreva uma observação para o cadastro.";
+    errors.notes = "Escreva uma observacao para o cadastro.";
   }
 
   return errors;
 }
+
+

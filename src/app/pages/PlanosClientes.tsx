@@ -15,9 +15,9 @@ export function PlanosClientes() {
 
   return (
     <PageShell
-      eyebrow="Gestão"
+      eyebrow="Gestao"
       title="Planos recorrentes de clientes"
-      description="Deixe a área de recorrência mais elegante para acompanhar renovações, volume mensal e oportunidades de fidelização."
+      description="Deixe a area de recorrencia mais elegante para acompanhar renovacoes, volume mensal e oportunidades de fidelizacao."
     >
       <div className="metric-grid">
         <MetricCard
@@ -34,7 +34,7 @@ export function PlanosClientes() {
           accent="sand"
         />
         <MetricCard
-          label="Próxima renovação"
+          label="Proxima renovacao"
           value="--"
           helper="Aparece assim que o primeiro plano entrar em vigor"
           icon={<Calendar className="h-5 w-5" />}
@@ -44,7 +44,7 @@ export function PlanosClientes() {
 
       <SectionCard
         title="Busca e acompanhamento"
-        description="Procure um cliente ou nome de plano para acompanhar recorrências sem abrir várias telas."
+        description="Procure um cliente ou nome de plano para acompanhar recorrencias sem abrir varias telas."
         action={
           <div className="relative w-full max-w-sm">
             <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -56,10 +56,12 @@ export function PlanosClientes() {
           <EmptyStatePanel
             icon={<Calendar className="h-7 w-7" />}
             title="Nenhum plano recorrente"
-            description="Quando você estruturar pacotes recorrentes para clientes, esta área vai mostrar renovações, volume contratado e histórico de permanência."
+            description="Quando voce estruturar pacotes recorrentes para clientes, esta area vai mostrar renovacoes, volume contratado e historico de permanencia."
           />
         ) : null}
       </SectionCard>
     </PageShell>
   );
 }
+
+

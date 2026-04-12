@@ -35,14 +35,14 @@ export function ProfessionalListCard({
   const activeWorkDays = getActiveWorkDaysCount(professional);
   const activeDaysSummary = getActiveWorkDaysSummary(professional);
   const hasSchedule = activeWorkDays > 0;
-  const operationalStatus = hasSchedule ? "Liberado para agenda" : "Horários pendentes";
+  const operationalStatus = hasSchedule ? "Liberado para agenda" : "Horarios pendentes";
   const displayName = truncateText(professional.name || "Profissional sem nome", MAX_NAME_LENGTH);
   const displaySpecialty = truncateText(
-    professional.specialty || "Especialidade não informada",
+    professional.specialty || "Especialidade nao informada",
     MAX_SPECIALTY_LENGTH,
   );
-  const displayPhone = professional.phone ? formatPhone(professional.phone) : "Telefone não informado";
-  const displayEmail = professional.email || "E-mail não informado";
+  const displayPhone = professional.phone ? formatPhone(professional.phone) : "Telefone nao informado";
+  const displayEmail = professional.email || "E-mail nao informado";
 
   return (
     <article className="flex h-full flex-col rounded-[1.8rem] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(255,248,242,0.88))] p-6 shadow-[0_28px_60px_-34px_rgba(73,47,22,0.35)]">
@@ -52,7 +52,7 @@ export function ProfessionalListCard({
             {displayName}
           </h3>
           <span className="inline-flex items-center rounded-full border border-[rgba(74,52,34,0.12)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em]">
-            {professional.status === "ativo" ? "Ativo" : "Férias"}
+            {professional.status === "ativo" ? "Ativo" : "Ferias"}
           </span>
           <span
             className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] ${
@@ -62,19 +62,19 @@ export function ProfessionalListCard({
             }`}
           >
             <Clock3 className="mr-1.5 h-3.5 w-3.5" />
-            {hasSchedule ? `${activeWorkDays} dia(s) ativos` : "Sem horários"}
+            {hasSchedule ? `${activeWorkDays} dia(s) ativos` : "Sem horarios"}
           </span>
         </div>
 
         <div className="space-y-3 text-base text-muted-foreground">
           <p title={professional.specialty}>{displaySpecialty}</p>
-          <p title={professional.specialty}>Área de atuação: {displaySpecialty}</p>
+          <p title={professional.specialty}>Área de atuacao: {displaySpecialty}</p>
         </div>
 
         {hasSchedule ? (
           <div className="rounded-[1.5rem] border border-emerald-200 bg-emerald-50/70 px-5 py-4 text-emerald-700">
             <p className="text-base leading-7">
-              A rotina de atendimento já foi definida e esse profissional pode aparecer normalmente na agenda.
+              A rotina de atendimento ja foi definida e esse profissional pode aparecer normalmente na agenda.
             </p>
           </div>
         ) : (
@@ -82,7 +82,7 @@ export function ProfessionalListCard({
             <div className="flex items-start gap-3">
               <CircleAlert className="mt-0.5 h-5 w-5 shrink-0" />
               <p className="text-base leading-7">
-                Esse profissional ainda não entra na agenda online porque a rotina de atendimento dele não foi
+                Esse profissional ainda nao entra na agenda online porque a rotina de atendimento dele nao foi
                 definida.
               </p>
             </div>
@@ -129,7 +129,7 @@ export function ProfessionalListCard({
         <Button variant="outline" className="min-w-[8.5rem] flex-1 md:flex-none" asChild>
           <Link to={`/profissionais/${professional.id}/horarios`}>
             <Clock3 className="h-4 w-4" />
-            Horários
+            Horarios
           </Link>
         </Button>
         <Button
@@ -144,3 +144,5 @@ export function ProfessionalListCard({
     </article>
   );
 }
+
+

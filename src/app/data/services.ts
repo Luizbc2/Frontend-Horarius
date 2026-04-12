@@ -28,7 +28,7 @@ const initialServices: Service[] = [
     category: "Corte",
     durationMinutes: 30,
     price: 35,
-    description: "Corte tradicional com finalização básica.",
+    description: "Corte tradicional com finalizacao basica.",
   },
   {
     id: 2,
@@ -40,11 +40,11 @@ const initialServices: Service[] = [
   },
   {
     id: 3,
-    name: "Pigmentação",
+    name: "Pigmentacao",
     category: "Acabamento",
     durationMinutes: 25,
     price: 30,
-    description: "Pigmentação discreta para barba ou cabelo.",
+    description: "Pigmentacao discreta para barba ou cabelo.",
   },
 ];
 
@@ -106,7 +106,7 @@ export function validateServiceForm(formData: ServiceFormData) {
   const price = Number(formData.price.replace(",", "."));
 
   if (!formData.name.trim()) {
-    errors.name = "Informe o nome do serviço.";
+    errors.name = "Informe o nome do servico.";
   }
 
   if (!formData.category.trim()) {
@@ -114,16 +114,18 @@ export function validateServiceForm(formData: ServiceFormData) {
   }
 
   if (!Number.isFinite(duration) || duration <= 0) {
-    errors.durationMinutes = "Informe uma duração válida em minutos.";
+    errors.durationMinutes = "Informe uma duracao valida em minutos.";
   }
 
   if (!Number.isFinite(price) || price <= 0) {
-    errors.price = "Informe um preço válido.";
+    errors.price = "Informe um preco valido.";
   }
 
   if (!formData.description.trim()) {
-    errors.description = "Escreva uma descrição curta do serviço.";
+    errors.description = "Escreva uma descricao curta do servico.";
   }
 
   return errors;
 }
+
+

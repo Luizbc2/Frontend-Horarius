@@ -166,7 +166,7 @@ export function AgendaLista() {
         }
 
         if (!isMissingAuthTokenError(error)) {
-          toast.error(getApiErrorMessage(error, "Não foi possível carregar clientes e serviços."));
+          toast.error(getApiErrorMessage(error, "Nao foi possivel carregar clientes e servicos."));
         }
       }
     };
@@ -213,7 +213,7 @@ export function AgendaLista() {
         setAppointments([]);
 
         if (!isMissingAuthTokenError(error)) {
-          toast.error(getApiErrorMessage(error, "Não foi possível carregar os agendamentos."));
+          toast.error(getApiErrorMessage(error, "Nao foi possivel carregar os agendamentos."));
         }
       } finally {
         if (isMounted) {
@@ -332,7 +332,7 @@ export function AgendaLista() {
     }
 
     if (!token) {
-      toast.error("Sua sessão expirou. Entre novamente para continuar.");
+      toast.error("Sua sessao expirou. Entre novamente para continuar.");
       return;
     }
 
@@ -341,7 +341,7 @@ export function AgendaLista() {
     const serviceId = Number(editDraft.serviceId);
 
     if (!clientId || !professionalId || !serviceId) {
-      toast.error("Selecione cliente, profissional e serviço.");
+      toast.error("Selecione cliente, profissional e servico.");
       return;
     }
 
@@ -367,7 +367,7 @@ export function AgendaLista() {
       toast.success(response.message);
       resetEditDialog();
     } catch (error) {
-      toast.error(getApiErrorMessage(error, "Não foi possível atualizar o agendamento."));
+      toast.error(getApiErrorMessage(error, "Nao foi possivel atualizar o agendamento."));
     }
   };
 
@@ -376,7 +376,7 @@ export function AgendaLista() {
     status: AppointmentStatus,
   ) => {
     if (!token) {
-      toast.error("Sua sessão expirou. Entre novamente para continuar.");
+      toast.error("Sua sessao expirou. Entre novamente para continuar.");
       return;
     }
 
@@ -405,13 +405,13 @@ export function AgendaLista() {
 
       toast.success(response.message);
     } catch (error) {
-      toast.error(getApiErrorMessage(error, "Não foi possível atualizar o agendamento."));
+      toast.error(getApiErrorMessage(error, "Nao foi possivel atualizar o agendamento."));
     }
   };
 
   const handleDeleteAppointment = async (appointment: AgendaListItem) => {
     if (!token) {
-      toast.error("Sua sessão expirou. Entre novamente para continuar.");
+      toast.error("Sua sessao expirou. Entre novamente para continuar.");
       return;
     }
 
@@ -425,15 +425,15 @@ export function AgendaLista() {
 
       toast.success(response.message);
     } catch (error) {
-      toast.error(getApiErrorMessage(error, "Não foi possível excluir o agendamento."));
+      toast.error(getApiErrorMessage(error, "Nao foi possivel excluir o agendamento."));
     }
   };
 
   return (
     <PageShell
-      eyebrow="Gestão diária"
+      eyebrow="Gestao diaria"
       title="Lista de agendamentos"
-      description="Filtre a operação por profissional, status e busca textual para encontrar rapidamente qualquer atendimento do dia."
+      description="Filtre a operacao por profissional, status e busca textual para encontrar rapidamente qualquer atendimento do dia."
       actions={
         <>
           <Button variant="outline" onClick={handleRefresh}>
@@ -471,7 +471,7 @@ export function AgendaLista() {
 
       <SectionCard
         title="Filtros e resultados"
-        description="Combine data, profissional e status para reduzir a lista e agir mais rápido sobre cada atendimento."
+        description="Combine data, profissional e status para reduzir a lista e agir mais rapido sobre cada atendimento."
       >
         <div className="grid gap-3 lg:grid-cols-[1.05fr_1fr_1fr_1.2fr_auto]">
           <Input type="date" value={selectedDate} onChange={(event) => setSelectedDate(event.target.value)} />
@@ -507,7 +507,7 @@ export function AgendaLista() {
             <Input
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
-              placeholder="Buscar cliente, serviço ou profissional"
+              placeholder="Buscar cliente, servico ou profissional"
               className="pl-11"
             />
           </div>
@@ -525,10 +525,10 @@ export function AgendaLista() {
                 <TableRow>
                   <TableHead>Data e hora</TableHead>
                   <TableHead>Cliente</TableHead>
-                  <TableHead>Serviço</TableHead>
+                  <TableHead>Servico</TableHead>
                   <TableHead>Profissional</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="w-[96px] text-right">Ações</TableHead>
+                  <TableHead className="w-[96px] text-right">Acoes</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -621,7 +621,7 @@ export function AgendaLista() {
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
                 <span className="data-pill text-sm">
-                  Página {safePage} de {totalPages}
+                  Pagina {safePage} de {totalPages}
                 </span>
                 <Button
                   variant="outline"
@@ -641,7 +641,7 @@ export function AgendaLista() {
           <DialogHeader>
             <DialogTitle>Editar agendamento</DialogTitle>
             <DialogDescription>
-              Ajuste cliente, profissional, serviço, horário e status sem sair da lista.
+              Ajuste cliente, profissional, servico, horario e status sem sair da lista.
             </DialogDescription>
           </DialogHeader>
 
@@ -671,7 +671,7 @@ export function AgendaLista() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="agenda-edit-service">Serviço</Label>
+              <Label htmlFor="agenda-edit-service">Servico</Label>
               <Select
                 value={editDraft.serviceId}
                 onValueChange={(value) =>
@@ -682,7 +682,7 @@ export function AgendaLista() {
                 }
               >
                 <SelectTrigger id="agenda-edit-service">
-                  <SelectValue placeholder="Escolha o serviço" />
+                  <SelectValue placeholder="Escolha o servico" />
                 </SelectTrigger>
                 <SelectContent>
                   {services.map((service) => (
@@ -720,7 +720,7 @@ export function AgendaLista() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="agenda-edit-time">Horário</Label>
+                <Label htmlFor="agenda-edit-time">Horario</Label>
                 <Input
                   id="agenda-edit-time"
                   type="time"
@@ -762,7 +762,7 @@ export function AgendaLista() {
             <Button variant="outline" onClick={resetEditDialog}>
               Cancelar
             </Button>
-            <Button onClick={handleSaveAppointmentEdit}>Salvar alterações</Button>
+            <Button onClick={handleSaveAppointmentEdit}>Salvar alteracoes</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -787,7 +787,7 @@ export function AgendaLista() {
                   <p className="mt-1 text-base text-foreground">{detailsAppointment.professional}</p>
                 </div>
                 <div>
-                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Serviço</p>
+                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Servico</p>
                   <p className="mt-1 text-base text-foreground">{detailsAppointment.service}</p>
                 </div>
                 <div>
@@ -801,7 +801,7 @@ export function AgendaLista() {
                   <p className="mt-1 text-base text-foreground">{detailsAppointment.date}</p>
                 </div>
                 <div>
-                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Horário</p>
+                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Horario</p>
                   <p className="mt-1 text-base text-foreground">{detailsAppointment.time}</p>
                 </div>
               </div>
@@ -818,3 +818,5 @@ export function AgendaLista() {
     </PageShell>
   );
 }
+
+

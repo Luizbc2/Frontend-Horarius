@@ -20,21 +20,21 @@ const loginFeatures = [
   {
     icon: CalendarDays,
     title: "Agenda central",
-    description: "Veja os compromissos do dia e ajuste a operação sem trocar de tela.",
+    description: "Veja os compromissos do dia e ajuste a operacao sem trocar de tela.",
     iconClassName:
       "bg-[linear-gradient(135deg,rgba(89,184,171,0.96),rgba(31,109,104,0.92))] text-primary-foreground",
   },
   {
     icon: ShieldCheck,
-    title: "Não desloga do seu navegador",
-    description: "O acesso continua salvo no navegador para você voltar ao painel depois.",
+    title: "Nao desloga do seu navegador",
+    description: "O acesso continua salvo no navegador para voce voltar ao painel depois.",
     iconClassName:
       "bg-[linear-gradient(135deg,rgba(211,140,86,0.94),rgba(168,103,53,0.92))] text-white",
   },
   {
     icon: LockKeyhole,
-    title: "Só realizar o registro uma vez",
-    description: "Após o cadastro, você pode acessar o painel sem precisar se registrar novamente.",
+    title: "So realizar o registro uma vez",
+    description: "Apos o cadastro, voce pode acessar o painel sem precisar se registrar novamente.",
     iconClassName:
       "bg-[linear-gradient(135deg,rgba(53,92,125,0.94),rgba(31,47,80,0.92))] text-white",
   },
@@ -88,7 +88,7 @@ export function Login() {
     if (!normalizedEmail) {
       nextErrors.email = "Informe seu e-mail.";
     } else if (!emailPattern.test(normalizedEmail)) {
-      nextErrors.email = "Digite um e-mail válido.";
+      nextErrors.email = "Digite um e-mail valido.";
     }
 
     if (!password.trim()) {
@@ -108,7 +108,7 @@ export function Login() {
       navigate(redirectPath, { replace: true });
     } catch (error) {
       setErrors({
-        submit: error instanceof Error ? error.message : "Não foi possível entrar agora.",
+        submit: error instanceof Error ? error.message : "Nao foi possivel entrar agora.",
       });
     } finally {
       setIsSubmitting(false);
@@ -123,8 +123,8 @@ export function Login() {
       <div className="relative mx-auto grid w-full max-w-6xl gap-6 lg:grid-cols-[minmax(0,1.05fr)_28rem]">
         <AuthShowcasePanel
           eyebrow="Painel do studio"
-          title="Seu dia começa aqui, antes da primeira cadeira ocupar."
-          description="Entre para acompanhar agenda, equipe, serviços e tudo que move a rotina do studio em um só lugar."
+          title="Seu dia comeca aqui, antes da primeira cadeira ocupar."
+          description="Entre para acompanhar agenda, equipe, servicos e tudo que move a rotina do studio em um so lugar."
           features={loginFeatures}
         />
 
@@ -142,7 +142,7 @@ export function Login() {
           <form noValidate onSubmit={handleSubmit} className="mt-8 grid gap-4">
             {successNotice ? (
               <Alert className="border-primary/15 bg-primary/5">
-                <AlertTitle>Cadastro concluído</AlertTitle>
+                <AlertTitle>Cadastro concluido</AlertTitle>
                 <AlertDescription>{successNotice}</AlertDescription>
               </Alert>
             ) : null}
@@ -204,3 +204,5 @@ export function Login() {
     </div>
   );
 }
+
+

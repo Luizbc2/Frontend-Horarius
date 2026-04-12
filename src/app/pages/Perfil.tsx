@@ -80,15 +80,15 @@ function validatePasswordStrength(value: string) {
   }
 
   if (!/[A-Z]/.test(value)) {
-    return "Inclua ao menos uma letra maiúscula na senha.";
+    return "Inclua ao menos uma letra maiuscula na senha.";
   }
 
   if (!/[a-z]/.test(value)) {
-    return "Inclua ao menos uma letra minúscula na senha.";
+    return "Inclua ao menos uma letra minuscula na senha.";
   }
 
   if (!/\d/.test(value)) {
-    return "Inclua ao menos um número na senha.";
+    return "Inclua ao menos um numero na senha.";
   }
 
   return "";
@@ -102,13 +102,13 @@ function validateProfileForm(formData: ProfileFormData) {
   }
 
   if (!formData.email.trim()) {
-    errors.email = "O e-mail do usuário precisa estar preenchido.";
+    errors.email = "O e-mail do usuario precisa estar preenchido.";
   }
 
   if (!formData.cpf.trim()) {
     errors.cpf = "Informe seu CPF.";
   } else if (!validateCpf(formData.cpf)) {
-    errors.cpf = "Digite um CPF válido.";
+    errors.cpf = "Digite um CPF valido.";
   }
 
   if (!formData.password.trim()) {
@@ -202,7 +202,7 @@ export function Perfil() {
       setSuccessMessage("Seus dados foram atualizados com sucesso.");
     } catch (error) {
       setFormErrors({
-        submit: error instanceof Error ? error.message : "Não foi possível salvar agora.",
+        submit: error instanceof Error ? error.message : "Nao foi possivel salvar agora.",
       });
     } finally {
       setIsSubmitting(false);
@@ -218,7 +218,7 @@ export function Perfil() {
       description="Atualize os dados da sua conta. O e-mail fica bloqueado e a senha precisa ser confirmada para salvar."
       actions={
         <Button type="submit" form="profile-form" disabled={isSubmitting}>
-          {isSubmitting ? "Salvando..." : "Salvar alterações"}
+          {isSubmitting ? "Salvando..." : "Salvar alteracoes"}
         </Button>
       }
     >
@@ -234,7 +234,7 @@ export function Perfil() {
 
         {formErrors.submit ? (
           <Alert variant="destructive" className="border-destructive/20 bg-destructive/5">
-            <AlertTitle>Edição inválida</AlertTitle>
+            <AlertTitle>Edicao invalida</AlertTitle>
             <AlertDescription>{formErrors.submit}</AlertDescription>
           </Alert>
         ) : null}
@@ -259,3 +259,5 @@ export function Perfil() {
     </PageShell>
   );
 }
+
+

@@ -22,8 +22,8 @@ export function ProfileIdentitySection({
 }: ProfileIdentitySectionProps) {
   return (
     <SectionCard
-      title="Dados do usuário"
-      description="Aqui você altera somente os dados da conta que está logada agora."
+      title="Dados do usuario"
+      description="Aqui voce altera somente os dados da conta que esta logada agora."
     >
       <div className="grid gap-4 md:grid-cols-2">
         <div className="grid gap-2">
@@ -47,7 +47,7 @@ export function ProfileIdentitySection({
           <label htmlFor="profile-email">E-mail</label>
           <Input id="profile-email" type="email" value={email} disabled readOnly />
           <p className="min-h-[1.25rem] text-sm text-muted-foreground">
-            Este campo não pode ser alterado nesta tela.
+            Este campo nao pode ser alterado nesta tela.
           </p>
         </div>
 
@@ -78,3 +78,5 @@ export function ProfileIdentitySection({
     </SectionCard>
   );
 }
+
+

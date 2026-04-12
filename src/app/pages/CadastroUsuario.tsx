@@ -31,7 +31,7 @@ type SignupFormErrors = {
 const signupFeatures = [
   {
     icon: UserRound,
-    title: "Dados básicos",
+    title: "Dados basicos",
     description: "Nome, e-mail, CPF e senha em um fluxo direto, sem excesso de etapas.",
     iconClassName:
       "bg-[linear-gradient(135deg,rgba(89,184,171,0.96),rgba(31,109,104,0.92))] text-primary-foreground",
@@ -39,14 +39,14 @@ const signupFeatures = [
   {
     icon: CalendarDays,
     title: "Fluxo separado",
-    description: "Cadastro e entrada ficam separados para deixar a experiência mais clara desde o começo.",
+    description: "Cadastro e entrada ficam separados para deixar a experiencia mais clara desde o comeco.",
     iconClassName:
       "bg-[linear-gradient(135deg,rgba(211,140,86,0.94),rgba(168,103,53,0.92))] text-white",
   },
   {
     icon: ArrowRight,
     title: "Volta ao login",
-    description: "Depois do cadastro, o usuário retorna ao login para acessar o painel.",
+    description: "Depois do cadastro, o usuario retorna ao login para acessar o painel.",
     iconClassName:
       "bg-[linear-gradient(135deg,rgba(53,92,125,0.94),rgba(31,47,80,0.92))] text-white",
   },
@@ -123,13 +123,13 @@ function validateSignupForm(formData: SignupFormData) {
   if (!normalizedEmail) {
     errors.email = "Informe seu e-mail.";
   } else if (!emailPattern.test(normalizedEmail)) {
-    errors.email = "Digite um e-mail válido.";
+    errors.email = "Digite um e-mail valido.";
   }
 
   if (!normalizedCpf) {
     errors.cpf = "Informe seu CPF.";
   } else if (!validateCpf(normalizedCpf)) {
-    errors.cpf = "Digite um CPF válido.";
+    errors.cpf = "Digite um CPF valido.";
   }
 
   if (!formData.password.trim()) {
@@ -150,39 +150,39 @@ function validateSignupForm(formData: SignupFormData) {
 }
 
 function mapSignupSuccessMessage(message: string) {
-  if (message === "Usuário cadastrado com sucesso.") {
-    return "Conta criada com sucesso. Agora você já pode entrar no painel.";
+  if (message === "Usuario cadastrado com sucesso.") {
+    return "Conta criada com sucesso. Agora voce ja pode entrar no painel.";
   }
 
   return message;
 }
 
 function mapSignupApiError(error: unknown): SignupFormErrors {
-  const message = getApiErrorMessage(error, "Não foi possível concluir o cadastro agora.");
+  const message = getApiErrorMessage(error, "Nao foi possivel concluir o cadastro agora.");
 
-  if (isApiErrorWithStatus(error, 409) && message === "E-mail já está em uso.") {
+  if (isApiErrorWithStatus(error, 409) && message === "E-mail ja esta em uso.") {
     return {
-      email: "Este e-mail já está em uso.",
+      email: "Este e-mail ja esta em uso.",
       submit: "Use outro e-mail para continuar.",
     };
   }
 
-  if (isApiErrorWithStatus(error, 409) && message === "CPF já está em uso.") {
+  if (isApiErrorWithStatus(error, 409) && message === "CPF ja esta em uso.") {
     return {
-      cpf: "Este CPF já está em uso.",
+      cpf: "Este CPF ja esta em uso.",
       submit: "Revise o CPF informado para continuar.",
     };
   }
 
   switch (message) {
-    case "Formato de e-mail inválido.":
+    case "Formato de e-mail invalido.":
       return {
-        email: "Digite um e-mail válido.",
+        email: "Digite um e-mail valido.",
         submit: "Revise os campos destacados antes de continuar.",
       };
-    case "CPF inválido.":
+    case "CPF invalido.":
       return {
-        cpf: "Digite um CPF válido.",
+        cpf: "Digite um CPF valido.",
         submit: "Revise os campos destacados antes de continuar.",
       };
     default:
@@ -258,8 +258,8 @@ export function CadastroUsuario() {
       <div className="relative mx-auto grid w-full max-w-6xl gap-6 lg:grid-cols-[minmax(0,1.05fr)_30rem]">
         <AuthShowcasePanel
           eyebrow="Primeiro acesso"
-          title="Crie sua conta e deixe o painel pronto para rodar com você."
-          description="O cadastro organiza os dados básicos de quem vai usar o sistema e prepara a entrada no painel logo em seguida."
+          title="Crie sua conta e deixe o painel pronto para rodar com voce."
+          description="O cadastro organiza os dados basicos de quem vai usar o sistema e prepara a entrada no painel logo em seguida."
           features={signupFeatures}
         />
 
@@ -371,7 +371,7 @@ export function CadastroUsuario() {
 
             {formErrors.submit ? (
               <Alert variant="destructive" className="border-destructive/20 bg-destructive/5">
-                <AlertTitle>Não foi possível concluir o cadastro</AlertTitle>
+                <AlertTitle>Nao foi possivel concluir o cadastro</AlertTitle>
                 <AlertDescription>{formErrors.submit}</AlertDescription>
               </Alert>
             ) : null}
@@ -383,7 +383,7 @@ export function CadastroUsuario() {
               </Button>
 
               <Button asChild type="button" variant="ghost" className="w-full">
-                <Link to="/login">Já tenho conta</Link>
+                <Link to="/login">Ja tenho conta</Link>
               </Button>
             </div>
           </form>
@@ -392,3 +392,5 @@ export function CadastroUsuario() {
     </div>
   );
 }
+
+
