@@ -21,35 +21,7 @@ export type ClientFormErrors = Partial<Record<keyof ClientFormData, string>>;
 
 export const CLIENTS_STORAGE_KEY = "horarius:clientes";
 
-const initialClients: Client[] = [
-  {
-    id: 1,
-    name: "Maria Oliveira",
-    email: "maria@cliente.com",
-    phone: "11988887777",
-    notes: "Prefere atendimento no fim da tarde.",
-    createdAt: "2026-03-20T10:00:00.000Z",
-    unread: false,
-  },
-  {
-    id: 2,
-    name: "Carlos Souza",
-    email: "carlos@cliente.com",
-    phone: "11999996666",
-    notes: "Volta a cada 15 dias para corte e barba.",
-    createdAt: "2026-03-22T14:30:00.000Z",
-    unread: true,
-  },
-  {
-    id: 3,
-    name: "Ana Martins",
-    email: "ana@cliente.com",
-    phone: "11977775555",
-    notes: "Gosta de confirmar o horario por WhatsApp.",
-    createdAt: "2026-03-24T09:15:00.000Z",
-    unread: false,
-  },
-];
+const initialClients: Client[] = [];
 
 export function loadClients() {
   return loadCollection(CLIENTS_STORAGE_KEY, initialClients);

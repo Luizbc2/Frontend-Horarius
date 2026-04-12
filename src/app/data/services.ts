@@ -21,32 +21,7 @@ export type ServiceFormErrors = Partial<Record<keyof ServiceFormData, string>>;
 
 export const SERVICES_STORAGE_KEY = "horarius:servicos";
 
-const initialServices: Service[] = [
-  {
-    id: 1,
-    name: "Corte simples",
-    category: "Corte",
-    durationMinutes: 30,
-    price: 35,
-    description: "Corte tradicional com finalizacao basica.",
-  },
-  {
-    id: 2,
-    name: "Corte e barba",
-    category: "Combo",
-    durationMinutes: 50,
-    price: 60,
-    description: "Atendimento completo com corte, barba e acabamento.",
-  },
-  {
-    id: 3,
-    name: "Pigmentacao",
-    category: "Acabamento",
-    durationMinutes: 25,
-    price: 30,
-    description: "Pigmentacao discreta para barba ou cabelo.",
-  },
-];
+const initialServices: Service[] = [];
 
 export function loadServices() {
   return loadCollection(SERVICES_STORAGE_KEY, initialServices);
