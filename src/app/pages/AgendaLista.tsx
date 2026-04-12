@@ -125,6 +125,8 @@ export function AgendaLista() {
   const [isLoading, setIsLoading] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingAppointment, setEditingAppointment] = useState<AgendaListItem | null>(null);
+  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+  const [detailsAppointment, setDetailsAppointment] = useState<AgendaListItem | null>(null);
   const [editDraft, setEditDraft] = useState<EditAppointmentDraft>({
     clientId: "",
     professionalId: "",
@@ -293,6 +295,11 @@ export function AgendaLista() {
     });
   };
 
+  const resetDetailsDialog = () => {
+    setIsDetailsDialogOpen(false);
+    setDetailsAppointment(null);
+  };
+
   const openEditDialog = (appointment: AgendaListItem) => {
     setEditingAppointment(appointment);
     setEditDraft({
@@ -303,6 +310,11 @@ export function AgendaLista() {
       status: appointment.status,
     });
     setIsEditDialogOpen(true);
+  };
+
+  const openDetailsDialog = (appointment: AgendaListItem) => {
+    setDetailsAppointment(appointment);
+    setIsDetailsDialogOpen(true);
   };
 
   const buildScheduledAt = (baseDate: string, time: string) => {
@@ -539,7 +551,7 @@ export function AgendaLista() {
                             </Button>
                           </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem onSelect={() => handleUnavailableAction("Os detalhes")}>
+                              <DropdownMenuItem onSelect={() => openDetailsDialog(appointment)}>
                                 Ver detalhes
                               </DropdownMenuItem>
                               <DropdownMenuItem onSelect={() => openEditDialog(appointment)}>
@@ -729,6 +741,55 @@ export function AgendaLista() {
               Cancelar
             </Button>
             <Button onClick={handleSaveAppointmentEdit}>Salvar alterações</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={isDetailsDialogOpen} onOpenChange={(open) => (!open ? resetDetailsDialog() : undefined)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Detalhes do agendamento</DialogTitle>
+            <DialogDescription>
+              Veja os dados completos antes de editar ou confirmar.
+            </DialogDescription>
+          </DialogHeader>
+
+          {detailsAppointment ? (
+            <div className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Cliente</p>
+                  <p className="mt-1 text-base text-foreground">{detailsAppointment.client}</p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Profissional</p>
+                  <p className="mt-1 text-base text-foreground">{detailsAppointment.professional}</p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Serviço</p>
+                  <p className="mt-1 text-base text-foreground">{detailsAppointment.service}</p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Status</p>
+                  <p className="mt-1 text-base text-foreground">
+                    {getStatusLabel(detailsAppointment.status)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Data</p>
+                  <p className="mt-1 text-base text-foreground">{detailsAppointment.date}</p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Horário</p>
+                  <p className="mt-1 text-base text-foreground">{detailsAppointment.time}</p>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={resetDetailsDialog}>
+              Fechar
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
