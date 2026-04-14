@@ -64,11 +64,11 @@ export const WEEK_DAYS: WeekDayKey[] = [
 export const WEEK_DAY_LABELS: Record<WeekDayKey, string> = {
   domingo: "Domingo",
   segunda: "Segunda",
-  terca: "Terça",
+  terca: "Terca",
   quarta: "Quarta",
   quinta: "Quinta",
   sexta: "Sexta",
-  sabado: "Sábado",
+  sabado: "Sabado",
 };
 
 const initialProfessionals: Professional[] = [];
@@ -204,27 +204,27 @@ export function validateProfessionalWorkDays(workDays: ProfessionalWorkDay[]) {
     }
 
     if (!workDay.startTime || !workDay.endTime) {
-      return `Preencha a entrada e a saída de ${WEEK_DAY_LABELS[workDay.day]}.`;
+      return `Preencha a entrada e a saida de ${WEEK_DAY_LABELS[workDay.day]}.`;
     }
 
     if (workDay.endTime <= workDay.startTime) {
-      return `Em ${WEEK_DAY_LABELS[workDay.day]}, a saída precisa ser depois da entrada.`;
+      return `Em ${WEEK_DAY_LABELS[workDay.day]}, a saida precisa ser depois da entrada.`;
     }
 
     const hasBreakStart = Boolean(workDay.breakStart);
     const hasBreakEnd = Boolean(workDay.breakEnd);
 
     if (hasBreakStart !== hasBreakEnd) {
-      return `Se for usar pausa em ${WEEK_DAY_LABELS[workDay.day]}, preencha início e fim.`;
+      return `Se for usar pausa em ${WEEK_DAY_LABELS[workDay.day]}, preencha inicio e fim.`;
     }
 
     if (hasBreakStart && hasBreakEnd) {
       if (workDay.breakEnd <= workDay.breakStart) {
-        return `Em ${WEEK_DAY_LABELS[workDay.day]}, o fim da pausa precisa ser depois do início.`;
+        return `Em ${WEEK_DAY_LABELS[workDay.day]}, o fim da pausa precisa ser depois do inicio.`;
       }
 
       if (workDay.breakStart <= workDay.startTime || workDay.breakEnd >= workDay.endTime) {
-        return `A pausa de ${WEEK_DAY_LABELS[workDay.day]} precisa ficar dentro do horário de trabalho.`;
+        return `A pausa de ${WEEK_DAY_LABELS[workDay.day]} precisa ficar dentro do horario de trabalho.`;
       }
     }
   }
@@ -243,11 +243,11 @@ export function validateProfessionalForm(formData: ProfessionalFormData) {
   if (!formData.email.trim()) {
     errors.email = "Informe o e-mail.";
   } else if (!emailPattern.test(formData.email.trim())) {
-    errors.email = "Digite um e-mail válido.";
+    errors.email = "Digite um e-mail valido.";
   }
 
   if (formData.phone.replace(/\D/g, "").length < 10) {
-    errors.phone = "Digite um telefone válido com DDD.";
+    errors.phone = "Digite um telefone valido com DDD.";
   }
 
   if (!formData.specialty.trim()) {
