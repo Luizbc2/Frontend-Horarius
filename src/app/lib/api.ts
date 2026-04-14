@@ -2,13 +2,12 @@ export const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL?.trim() || "http://localhost:3333/api";
 
 type QueryValue = string | number | boolean | null | undefined;
+import type { JsonValue } from "../types/http";
 
 type ApiRequestOptions = Omit<RequestInit, "body"> & {
-  body?: unknown;
+  body?: JsonValue;
   query?: Record<string, QueryValue>;
 };
-
-type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
 
 export class ApiError extends Error {
   public readonly status: number;
@@ -58,7 +57,7 @@ const parseResponseBody = async (response: Response): Promise<JsonValue | null> 
   return text || null;
 };
 
-const createHeaders = (initHeaders?: HeadersInit, body?: unknown): Headers => {
+const createHeaders = (initHeaders?: HeadersInit, body?: JsonValue): Headers => {
   const headers = new Headers(initHeaders);
 
   if (body !== undefined && body !== null && !headers.has("Content-Type")) {
@@ -94,11 +93,11 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
 export const api = {
   get: <T>(path: string, options?: Omit<ApiRequestOptions, "body" | "method">) =>
     apiRequest<T>(path, { ...options, method: "GET" }),
-  post: <T>(path: string, body?: unknown, options?: Omit<ApiRequestOptions, "body" | "method">) =>
+  post: <T>(path: string, body?: JsonValue, options?: Omit<ApiRequestOptions, "body" | "method">) =>
     apiRequest<T>(path, { ...options, method: "POST", body }),
-  put: <T>(path: string, body?: unknown, options?: Omit<ApiRequestOptions, "body" | "method">) =>
+  put: <T>(path: string, body?: JsonValue, options?: Omit<ApiRequestOptions, "body" | "method">) =>
     apiRequest<T>(path, { ...options, method: "PUT", body }),
-  patch: <T>(path: string, body?: unknown, options?: Omit<ApiRequestOptions, "body" | "method">) =>
+  patch: <T>(path: string, body?: JsonValue, options?: Omit<ApiRequestOptions, "body" | "method">) =>
     apiRequest<T>(path, { ...options, method: "PATCH", body }),
   delete: <T>(path: string, options?: Omit<ApiRequestOptions, "body" | "method">) =>
     apiRequest<T>(path, { ...options, method: "DELETE" }),

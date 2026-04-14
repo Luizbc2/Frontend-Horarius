@@ -10,6 +10,7 @@ import {
 } from "../lib/auth-storage";
 import { getApiErrorMessage, isApiErrorWithStatus } from "../lib/api-error";
 import { loginWithApi, updateProfileWithApi } from "../services/auth";
+import type { ApiErrorInput } from "../types/http";
 
 type UpdateUserProfileInput = {
   name: string;
@@ -36,7 +37,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null);
   };
 
-  const handleProtectedRequestError = (error: unknown): never => {
+  const handleProtectedRequestError = (error: ApiErrorInput): never => {
     if (isApiErrorWithStatus(error, 401)) {
       clearSession();
       throw new Error("Sua sessao expirou. Entre novamente para continuar.");

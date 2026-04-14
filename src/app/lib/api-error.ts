@@ -1,6 +1,7 @@
 import { ApiError } from "./api";
+import type { ApiErrorInput } from "../types/http";
 
-export function getApiErrorMessage(error: unknown, fallbackMessage: string): string {
+export function getApiErrorMessage(error: ApiErrorInput, fallbackMessage: string): string {
   if (error instanceof ApiError && error.message.trim()) {
     return error.message;
   }
@@ -12,11 +13,11 @@ export function getApiErrorMessage(error: unknown, fallbackMessage: string): str
   return fallbackMessage;
 }
 
-export function isApiErrorWithStatus(error: unknown, status: number): error is ApiError {
+export function isApiErrorWithStatus(error: ApiErrorInput, status: number): error is ApiError {
   return error instanceof ApiError && error.status === status;
 }
 
-export function isMissingAuthTokenError(error: unknown): boolean {
+export function isMissingAuthTokenError(error: ApiErrorInput): boolean {
   return (
     error instanceof ApiError &&
     error.status === 401 &&

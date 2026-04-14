@@ -8,6 +8,7 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { getApiErrorMessage, isApiErrorWithStatus } from "../lib/api-error";
 import { signupWithApi } from "../services/auth";
+import type { ApiErrorInput } from "../types/http";
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -157,7 +158,7 @@ function mapSignupSuccessMessage(message: string) {
   return message;
 }
 
-function mapSignupApiError(error: unknown): SignupFormErrors {
+function mapSignupApiError(error: ApiErrorInput): SignupFormErrors {
   const message = getApiErrorMessage(error, "Nao foi possivel concluir o cadastro agora.");
 
   if (isApiErrorWithStatus(error, 409) && message === "E-mail ja esta em uso.") {

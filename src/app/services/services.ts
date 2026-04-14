@@ -1,13 +1,7 @@
 import { createEntityService, type ListQueryParams, type PaginatedResponse } from "./entity-service";
+import type { ServiceEntity } from "../types/entities";
 
-export type ServiceApiItem = {
-  id: number;
-  name: string;
-  category: string;
-  durationMinutes: number;
-  price: number;
-  description: string;
-};
+export type ServiceApiItem = ServiceEntity;
 
 export type CreateServiceRequest = {
   name: string;

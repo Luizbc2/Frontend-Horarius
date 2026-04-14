@@ -42,128 +42,30 @@ import {
   SelectValue,
 } from "../components/ui/select";
 import { cn } from "../components/ui/utils";
+import {
+  APPOINTMENT_DURATION_IN_MINUTES,
+  DAY_START_HOUR,
+  SLOT_HEIGHT,
+  SLOT_INTERVAL_MINUTES,
+  buildScheduledAt,
+  createAppointmentDraft,
+  createNewAppointmentDraft,
+  formatDateForApi,
+  generateTimeSlots,
+  getInitials,
+  mapTimelineAppointment,
+  timeToMinutes,
+  timelineStatusStyles,
+  type AppointmentDraft,
+  type NewAppointmentDraft,
+  type TimelineAppointment,
+} from "../features/agenda/timeline-helpers";
 import { getApiErrorMessage, isMissingAuthTokenError } from "../lib/api-error";
 import { createProfessionalsService, type ProfessionalApiItem } from "../services/professionals";
 import { createAppointmentsService } from "../services/appointments";
 import { createClientsService, type ClientApiItem } from "../services/clients";
 import { createServicesService, type ServiceApiItem } from "../services/services";
-
-type AppointmentStatus = "confirmado" | "pendente" | "cancelado";
-
-type Appointment = {
-  id: number;
-  clientId: number;
-  time: string;
-  client: string;
-  serviceId: number;
-  service: string;
-  professionalId: string;
-  status: AppointmentStatus;
-  notes: string;
-};
-
-type AppointmentDraft = {
-  client: string;
-  service: string;
-  time: string;
-  professionalId: string;
-  status: AppointmentStatus;
-};
-
-type NewAppointmentDraft = {
-  clientId: string;
-  clientName: string;
-  clientEmail: string;
-  clientPhone: string;
-  clientCpf: string;
-  serviceId: string;
-  time: string;
-  professionalId: string;
-  status: AppointmentStatus;
-};
-
-const DAY_START_HOUR = 9;
-const DAY_END_HOUR = 19;
-const SLOT_INTERVAL_MINUTES = 10;
-const SLOT_HEIGHT = 34;
-const APPOINTMENT_DURATION_IN_MINUTES = 30;
-
-const statusStyles: Record<
-  AppointmentStatus,
-  { card: string; badge: string; label: string }
-> = {
-  confirmado: {
-    card: "border-emerald-300 bg-emerald-100/90",
-    badge: "border-emerald-300 bg-emerald-50 text-emerald-800",
-    label: "Confirmado",
-  },
-  pendente: {
-    card: "border-amber-300 bg-amber-100/90",
-    badge: "border-amber-300 bg-amber-50 text-amber-800",
-    label: "Pendente",
-  },
-  cancelado: {
-    card: "border-rose-300 bg-rose-100/90",
-    badge: "border-rose-300 bg-rose-50 text-rose-700",
-    label: "Cancelado",
-  },
-};
-
-function getInitials(name: string) {
-  return name
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? "")
-    .join("");
-}
-
-function padTime(value: number) {
-  return String(value).padStart(2, "0");
-}
-
-function generateTimeSlots() {
-  const slots: string[] = [];
-  const totalMinutes = (DAY_END_HOUR - DAY_START_HOUR) * 60;
-
-  for (let minutes = 0; minutes < totalMinutes; minutes += SLOT_INTERVAL_MINUTES) {
-    const hour = DAY_START_HOUR + Math.floor(minutes / 60);
-    const minute = minutes % 60;
-    slots.push(`${padTime(hour)}:${padTime(minute)}`);
-  }
-
-  return slots;
-}
-
-function timeToMinutes(time: string) {
-  const [hours, minutes] = time.split(":").map(Number);
-  return hours * 60 + minutes;
-}
-
-function formatDateForApi(date: Date) {
-  const year = date.getFullYear();
-  const month = padTime(date.getMonth() + 1);
-  const day = padTime(date.getDate());
-
-  return `${year}-${month}-${day}`;
-}
-
-function formatAppointmentTime(scheduledAt: string) {
-  return new Date(scheduledAt).toLocaleTimeString("pt-BR", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
-}
-
-function buildScheduledAt(date: Date, time: string) {
-  const [hours, minutes] = time.split(":").map(Number);
-  const scheduledDate = new Date(date);
-
-  scheduledDate.setHours(hours, minutes, 0, 0);
-
-  return scheduledDate.toISOString();
-}
+import type { AppointmentStatus } from "../types/entities";
 
 export function AgendaTimeline() {
   const { token } = useAuth();
@@ -174,31 +76,17 @@ export function AgendaTimeline() {
   const [clients, setClients] = useState<ClientApiItem[]>([]);
   const [professionals, setProfessionals] = useState<ProfessionalApiItem[]>([]);
   const [services, setServices] = useState<ServiceApiItem[]>([]);
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [appointments, setAppointments] = useState<TimelineAppointment[]>([]);
   const [isLoadingAppointments, setIsLoadingAppointments] = useState(false);
   const [draggedAppointmentId, setDraggedAppointmentId] = useState<number | null>(null);
   const [dragOverSlot, setDragOverSlot] = useState<string | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingAppointmentId, setEditingAppointmentId] = useState<number | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [appointmentDraft, setAppointmentDraft] = useState<AppointmentDraft>({
-    client: "",
-    service: "",
-    time: "09:00",
-    professionalId: "",
-    status: "confirmado",
-  });
-  const [newAppointmentDraft, setNewAppointmentDraft] = useState<NewAppointmentDraft>({
-    clientId: "",
-    clientName: "",
-    clientEmail: "",
-    clientPhone: "",
-    clientCpf: "",
-    serviceId: "",
-    time: "09:00",
-    professionalId: "",
-    status: "confirmado",
-  });
+  const [appointmentDraft, setAppointmentDraft] = useState<AppointmentDraft>(createAppointmentDraft());
+  const [newAppointmentDraft, setNewAppointmentDraft] = useState<NewAppointmentDraft>(
+    createNewAppointmentDraft(),
+  );
 
   useEffect(() => {
     if (!token) {
@@ -329,19 +217,7 @@ export function AgendaTimeline() {
           return;
         }
 
-        setAppointments(
-          response.data.map((appointment) => ({
-            id: appointment.id,
-            clientId: appointment.clientId,
-            time: formatAppointmentTime(appointment.scheduledAt),
-            client: appointment.clientName,
-            serviceId: appointment.serviceId,
-            service: appointment.serviceName,
-            professionalId: String(appointment.professionalId),
-            status: appointment.status,
-            notes: appointment.notes,
-          })),
-        );
+        setAppointments(response.data.map(mapTimelineAppointment));
       } catch (error) {
         if (!isMounted) {
           return;
@@ -394,7 +270,7 @@ export function AgendaTimeline() {
   );
 
   const appointmentsByProfessional = useMemo(() => {
-    const grouped = new Map<string, Appointment[]>();
+    const grouped = new Map<string, TimelineAppointment[]>();
 
     for (const professional of visibleProfessionals) {
       grouped.set(String(professional.id), []);
@@ -452,28 +328,14 @@ export function AgendaTimeline() {
 
       return nextParams;
     });
-    setNewAppointmentDraft({
-      clientId: "",
-      clientName: "",
-      clientEmail: "",
-      clientPhone: "",
-      clientCpf: "",
-      serviceId: "",
-      time: "09:00",
-      professionalId: selectedProfessional !== "todos" ? selectedProfessional : "",
-      status: "confirmado",
-    });
+    setNewAppointmentDraft(
+      createNewAppointmentDraft(selectedProfessional !== "todos" ? selectedProfessional : ""),
+    );
   };
 
   const resetEditDialog = () => {
     setEditingAppointmentId(null);
-    setAppointmentDraft({
-      client: "",
-      service: "",
-      time: "09:00",
-      professionalId: "",
-      status: "confirmado",
-    });
+    setAppointmentDraft(createAppointmentDraft());
   };
 
   const handleCreateAppointment = () => {
@@ -545,17 +407,7 @@ export function AgendaTimeline() {
       .then((response) => {
         setAppointments((currentAppointments) => [
           ...currentAppointments,
-          {
-            id: response.appointment.id,
-            clientId: response.appointment.clientId,
-            time: formatAppointmentTime(response.appointment.scheduledAt),
-            client: response.appointment.clientName,
-            serviceId: response.appointment.serviceId,
-            service: response.appointment.serviceName,
-            professionalId: String(response.appointment.professionalId),
-            status: response.appointment.status,
-            notes: response.appointment.notes,
-          },
+          mapTimelineAppointment(response.appointment),
         ]);
         toast.success(response.message);
         resetCreateDialog();
@@ -565,7 +417,7 @@ export function AgendaTimeline() {
       });
   };
 
-  const openEditDialog = (appointment: Appointment) => {
+  const openEditDialog = (appointment: TimelineAppointment) => {
     setEditingAppointmentId(appointment.id);
     setAppointmentDraft({
       client: appointment.client,
@@ -803,10 +655,7 @@ export function AgendaTimeline() {
                   ...appointment,
                   client: response.appointment.clientName,
                   service: response.appointment.serviceName,
-                  time: formatAppointmentTime(response.appointment.scheduledAt),
-                  professionalId: String(response.appointment.professionalId),
-                  status: response.appointment.status,
-                  notes: response.appointment.notes,
+                  ...mapTimelineAppointment(response.appointment),
                 }
               : appointment,
           ),
@@ -1061,7 +910,7 @@ export function AgendaTimeline() {
                             key={appointment.id}
                             className={cn(
                               "absolute left-2 right-2 cursor-grab overflow-hidden rounded-[1rem] border px-3 py-2 shadow-[0_16px_35px_-28px_rgba(73,47,22,0.45)] active:cursor-grabbing",
-                              statusStyles[appointment.status].card,
+                              timelineStatusStyles[appointment.status].card,
                               draggedAppointmentId === appointment.id ? "opacity-60" : "",
                             )}
                             style={{

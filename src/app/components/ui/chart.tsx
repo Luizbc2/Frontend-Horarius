@@ -305,37 +305,42 @@ function ChartLegendContent({
 }
 
 // Helper to extract item config from a payload.
+type ChartPayloadValue = string | number | boolean | null | undefined | ChartPayloadRecord;
+type ChartPayloadRecord = {
+  [key: string]: ChartPayloadValue;
+};
+
+function readPayloadString(payload: ChartPayloadRecord | undefined, key: string) {
+  if (!payload) {
+    return null;
+  }
+
+  const value = payload[key];
+  return typeof value === "string" ? value : null;
+}
+
 function getPayloadConfigFromPayload(
   config: ChartConfig,
-  payload: unknown,
+  payload: ChartPayloadRecord | null | undefined,
   key: string,
 ) {
-  if (typeof payload !== "object" || payload === null) {
+  if (!payload) {
     return undefined;
   }
 
-  const payloadPayload =
-    "payload" in payload &&
-    typeof payload.payload === "object" &&
-    payload.payload !== null
-      ? payload.payload
-      : undefined;
+  const payloadPayload = payload.payload;
+  const nestedPayload =
+    typeof payloadPayload === "object" && payloadPayload !== null ? payloadPayload : undefined;
 
   let configLabelKey: string = key;
 
-  if (
-    key in payload &&
-    typeof payload[key as keyof typeof payload] === "string"
-  ) {
-    configLabelKey = payload[key as keyof typeof payload] as string;
-  } else if (
-    payloadPayload &&
-    key in payloadPayload &&
-    typeof payloadPayload[key as keyof typeof payloadPayload] === "string"
-  ) {
-    configLabelKey = payloadPayload[
-      key as keyof typeof payloadPayload
-    ] as string;
+  const directValue = readPayloadString(payload, key);
+  const nestedValue = readPayloadString(nestedPayload, key);
+
+  if (directValue) {
+    configLabelKey = directValue;
+  } else if (nestedValue) {
+    configLabelKey = nestedValue;
   }
 
   return configLabelKey in config

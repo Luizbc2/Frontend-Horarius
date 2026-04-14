@@ -1,20 +1,8 @@
 import { api } from "../lib/api";
 import type { PaginatedResponse } from "./entity-service";
+import type { AppointmentEntity, AppointmentStatus } from "../types/entities";
 
-export type AppointmentStatus = "confirmado" | "pendente" | "cancelado";
-
-export type AppointmentApiItem = {
-  id: number;
-  clientId: number;
-  clientName: string;
-  professionalId: number;
-  professionalName: string;
-  serviceId: number;
-  serviceName: string;
-  scheduledAt: string;
-  status: AppointmentStatus;
-  notes: string;
-};
+export type AppointmentApiItem = AppointmentEntity;
 
 export type ListAppointmentsQuery = {
   date?: string;

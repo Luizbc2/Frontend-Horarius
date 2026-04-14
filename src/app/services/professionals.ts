@@ -1,13 +1,7 @@
 import { createEntityService, type ListQueryParams, type PaginatedResponse } from "./entity-service";
+import type { ProfessionalEntity, ProfessionalWorkDayEntity } from "../types/entities";
 
-export type ProfessionalApiItem = {
-  id: number;
-  name: string;
-  email: string;
-  phone: string;
-  specialty: string;
-  status: string;
-};
+export type ProfessionalApiItem = ProfessionalEntity;
 
 export type CreateProfessionalRequest = {
   name: string;
@@ -17,16 +11,7 @@ export type CreateProfessionalRequest = {
   status: string;
 };
 
-export type ProfessionalWorkDayApiItem = {
-  id: number;
-  professionalId: number;
-  dayOfWeek: string;
-  enabled: boolean;
-  startTime: string;
-  endTime: string;
-  breakStart: string | null;
-  breakEnd: string | null;
-};
+export type ProfessionalWorkDayApiItem = ProfessionalWorkDayEntity;
 
 export type ProfessionalWorkDayRequest = {
   dayOfWeek: string;
