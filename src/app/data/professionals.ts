@@ -1,4 +1,4 @@
-import { createEntityId, loadCollection, saveCollection } from "./crudStorage";
+import { loadCollection, saveCollection } from "./crudStorage";
 
 export type ProfessionalStatus = "ativo" | "ferias";
 
@@ -126,20 +126,6 @@ export function getProfessionalById(professionalId: number) {
   return loadProfessionals().find((professional) => professional.id === professionalId) ?? null;
 }
 
-export function createProfessional(formData: ProfessionalFormData) {
-  const nextProfessional: Professional = {
-    id: createEntityId(),
-    name: formData.name.trim(),
-    email: formData.email.trim().toLowerCase(),
-    phone: formData.phone.trim(),
-    specialty: formData.specialty.trim(),
-    status: formData.status,
-    workDays: createDefaultWorkDays(),
-  };
-
-  saveCollection(PROFESSIONALS_STORAGE_KEY, [nextProfessional, ...loadProfessionals()]);
-}
-
 export function updateProfessional(professionalId: number, formData: ProfessionalFormData) {
   const nextProfessionals = loadProfessionals().map((professional) =>
     professional.id === professionalId
@@ -174,13 +160,6 @@ export function updateProfessionalWorkDays(professionalId: number, workDays: Pro
   );
 
   saveCollection(PROFESSIONALS_STORAGE_KEY, nextProfessionals);
-}
-
-export function deleteProfessional(professionalId: number) {
-  saveCollection(
-    PROFESSIONALS_STORAGE_KEY,
-    loadProfessionals().filter((professional) => professional.id !== professionalId),
-  );
 }
 
 export function getActiveWorkDaysCount(professional: Pick<Professional, "workDays">) {

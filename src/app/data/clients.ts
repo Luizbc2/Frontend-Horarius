@@ -1,15 +1,3 @@
-import { createEntityId, loadCollection, saveCollection } from "./crudStorage";
-
-export type Client = {
-  id: number;
-  name: string;
-  email: string;
-  phone: string;
-  notes: string;
-  createdAt: string;
-  unread: boolean;
-};
-
 export type ClientFormData = {
   name: string;
   email: string;
@@ -18,54 +6,6 @@ export type ClientFormData = {
 };
 
 export type ClientFormErrors = Partial<Record<keyof ClientFormData, string>>;
-
-export const CLIENTS_STORAGE_KEY = "horarius:clientes";
-
-const initialClients: Client[] = [];
-
-export function loadClients() {
-  return loadCollection(CLIENTS_STORAGE_KEY, initialClients);
-}
-
-export function getClientById(clientId: number) {
-  return loadClients().find((client) => client.id === clientId) ?? null;
-}
-
-export function createClient(formData: ClientFormData) {
-  const nextClient: Client = {
-    id: createEntityId(),
-    name: formData.name.trim(),
-    email: formData.email.trim().toLowerCase(),
-    phone: formData.phone.trim(),
-    notes: formData.notes.trim(),
-    createdAt: new Date().toISOString(),
-    unread: false,
-  };
-
-  const nextClients = [nextClient, ...loadClients()];
-  saveCollection(CLIENTS_STORAGE_KEY, nextClients);
-}
-
-export function updateClient(clientId: number, formData: ClientFormData) {
-  const nextClients = loadClients().map((client) =>
-    client.id === clientId
-      ? {
-          ...client,
-          name: formData.name.trim(),
-          email: formData.email.trim().toLowerCase(),
-          phone: formData.phone.trim(),
-          notes: formData.notes.trim(),
-        }
-      : client,
-  );
-
-  saveCollection(CLIENTS_STORAGE_KEY, nextClients);
-}
-
-export function deleteClient(clientId: number) {
-  const nextClients = loadClients().filter((client) => client.id !== clientId);
-  saveCollection(CLIENTS_STORAGE_KEY, nextClients);
-}
 
 export function normalizePhone(value: string) {
   return value.replace(/\D/g, "").slice(0, 11);

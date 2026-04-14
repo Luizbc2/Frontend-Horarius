@@ -1,7 +1,3 @@
-export function createEntityId() {
-  return Date.now() + Math.floor(Math.random() * 1000);
-}
-
 export function loadCollection<T>(storageKey: string, fallbackItems: T[]) {
   if (typeof window === "undefined") {
     return fallbackItems;
