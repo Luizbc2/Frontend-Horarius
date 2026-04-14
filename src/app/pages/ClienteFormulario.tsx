@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { ArrowLeft, Save } from "lucide-react";
 import { Link, Navigate, useLocation, useNavigate, useParams } from "react-router";
 
@@ -32,13 +32,13 @@ export function ClienteFormulario() {
   const params = useParams();
   const clientId = params.clientId ? Number(params.clientId) : null;
   const locationState = location.state as { client?: ClientApiItem } | null;
-  const existingClient = useMemo(
-    () => (clientId === null ? null : locationState?.client ?? null),
-    [clientId, locationState],
+  const [existingClient, setExistingClient] = useState<ClientApiItem | null>(
+    clientId === null ? null : locationState?.client ?? null,
   );
   const [formData, setFormData] = useState<ClientFormData>(initialFormData);
   const [formErrors, setFormErrors] = useState<ClientFormErrors>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [isLoadingClient, setIsLoadingClient] = useState(Boolean(clientId && !locationState?.client));
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isEditing = clientId !== null;
@@ -56,7 +56,47 @@ export function ClienteFormulario() {
     });
   }, [existingClient]);
 
-  if (isEditing && !existingClient) {
+  useEffect(() => {
+    if (!isEditing || clientId === null || existingClient || !token) {
+      if (!token && isEditing) {
+        setIsLoadingClient(false);
+      }
+
+      return;
+    }
+
+    let isMounted = true;
+
+    const loadClient = async () => {
+      try {
+        const response = await createClientsService(token).getById(clientId);
+
+        if (!isMounted) {
+          return;
+        }
+
+        setExistingClient(response.client);
+      } catch (error) {
+        if (!isMounted) {
+          return;
+        }
+
+        setSubmitError(getApiErrorMessage(error, "Nao foi possivel carregar o cliente."));
+      } finally {
+        if (isMounted) {
+          setIsLoadingClient(false);
+        }
+      }
+    };
+
+    void loadClient();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [clientId, existingClient, isEditing, token]);
+
+  if (isEditing && !isLoadingClient && !existingClient) {
     return <Navigate to="/clientes" replace />;
   }
 
@@ -151,6 +191,13 @@ export function ClienteFormulario() {
       }
     >
       <form noValidate onSubmit={handleSubmit} className="grid gap-6">
+        {isEditing && isLoadingClient ? (
+          <Alert className="border-border/60 bg-white/70">
+            <AlertTitle>Carregando cliente</AlertTitle>
+            <AlertDescription>Buscando os dados para preencher o formulario.</AlertDescription>
+          </Alert>
+        ) : null}
+
         {hasErrors ? (
           <Alert variant="destructive" className="border-destructive/20 bg-destructive/5">
             <AlertTitle>Formulario invalido</AlertTitle>

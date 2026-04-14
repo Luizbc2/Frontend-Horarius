@@ -23,6 +23,10 @@ export type CreateClientResponse = {
   client: ClientApiItem;
 };
 
+export type GetClientResponse = {
+  client: ClientApiItem;
+};
+
 export type UpdateClientResponse = {
   message: string;
   client: ClientApiItem;
@@ -39,6 +43,7 @@ export const createClientsService = (token: string) => {
   });
 
   return {
+    getById: (id: number) => entityService.get<GetClientResponse>(id),
     list: (query?: ListQueryParams) => entityService.list<ClientApiItem>(query),
     create: (body: CreateClientRequest) => entityService.create<CreateClientResponse, CreateClientRequest>(body),
     update: (id: number, body: UpdateClientRequest) =>
