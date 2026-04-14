@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { ArrowLeft, Save } from "lucide-react";
 import { Link, Navigate, useLocation, useNavigate, useParams } from "react-router";
 
@@ -27,13 +27,13 @@ export function ServicoFormulario() {
   const params = useParams();
   const serviceId = params.serviceId ? Number(params.serviceId) : null;
   const locationState = location.state as { service?: ServiceApiItem } | null;
-  const existingService = useMemo(
-    () => (serviceId === null ? null : locationState?.service ?? null),
-    [locationState, serviceId],
+  const [existingService, setExistingService] = useState<ServiceApiItem | null>(
+    serviceId === null ? null : locationState?.service ?? null,
   );
   const [formData, setFormData] = useState<ServiceFormData>(initialFormData);
   const [formErrors, setFormErrors] = useState<ServiceFormErrors>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [isLoadingService, setIsLoadingService] = useState(Boolean(serviceId && !locationState?.service));
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isEditing = serviceId !== null;
@@ -52,7 +52,47 @@ export function ServicoFormulario() {
     });
   }, [existingService]);
 
-  if (isEditing && !existingService) {
+  useEffect(() => {
+    if (!isEditing || serviceId === null || existingService || !token) {
+      if (!token && isEditing) {
+        setIsLoadingService(false);
+      }
+
+      return;
+    }
+
+    let isMounted = true;
+
+    const loadService = async () => {
+      try {
+        const response = await createServicesService(token).getById(serviceId);
+
+        if (!isMounted) {
+          return;
+        }
+
+        setExistingService(response.service);
+      } catch (error) {
+        if (!isMounted) {
+          return;
+        }
+
+        setSubmitError(getApiErrorMessage(error, "Nao foi possivel carregar o servico."));
+      } finally {
+        if (isMounted) {
+          setIsLoadingService(false);
+        }
+      }
+    };
+
+    void loadService();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [existingService, isEditing, serviceId, token]);
+
+  if (isEditing && !isLoadingService && !existingService) {
     return <Navigate to="/servicos" replace />;
   }
 
@@ -150,6 +190,13 @@ export function ServicoFormulario() {
       }
     >
       <form noValidate onSubmit={handleSubmit} className="grid gap-6">
+        {isEditing && isLoadingService ? (
+          <Alert className="border-border/60 bg-white/70">
+            <AlertTitle>Carregando servico</AlertTitle>
+            <AlertDescription>Buscando os dados para preencher o formulario.</AlertDescription>
+          </Alert>
+        ) : null}
+
         {hasErrors ? (
           <Alert variant="destructive" className="border-destructive/20 bg-destructive/5">
             <AlertTitle>Formulario invalido</AlertTitle>

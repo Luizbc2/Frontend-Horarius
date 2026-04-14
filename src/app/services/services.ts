@@ -24,6 +24,10 @@ export type CreateServiceResponse = {
   service: ServiceApiItem;
 };
 
+export type GetServiceResponse = {
+  service: ServiceApiItem;
+};
+
 export type UpdateServiceResponse = {
   message: string;
   service: ServiceApiItem;
@@ -40,6 +44,7 @@ export const createServicesService = (token: string) => {
   });
 
   return {
+    getById: (id: number) => entityService.get<GetServiceResponse>(id),
     list: (query?: ListQueryParams) => entityService.list<ServiceApiItem>(query),
     create: (body: CreateServiceRequest) =>
       entityService.create<CreateServiceResponse, CreateServiceRequest>(body),
