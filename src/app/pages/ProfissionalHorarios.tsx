@@ -100,15 +100,15 @@ export function ProfissionalHorarios() {
 
     navigate("/profissionais", {
       replace: true,
-      state: { notice: "Horários do profissional salvos com sucesso." },
+      state: { notice: "Horarios do profissional salvos com sucesso." },
     });
   };
 
   return (
     <PageShell
       eyebrow="Profissionais"
-      title="Horários de trabalho"
-      description="Defina os dias e faixas de atendimento do profissional para a semana. Se quiser, também dá para registrar pausa no mesmo dia."
+      title="Horarios de trabalho"
+      description="Defina os dias e faixas de atendimento do profissional para a semana. Se quiser, tambem da para registrar pausa no mesmo dia."
       actions={
         <Button variant="outline" asChild>
           <Link to="/profissionais">
@@ -141,7 +141,7 @@ export function ProfissionalHorarios() {
         <div className="space-y-4 p-6">
           {errorMessage ? (
             <Alert variant="destructive" className="border-destructive/20 bg-destructive/5">
-              <AlertTitle>Revise os horários</AlertTitle>
+              <AlertTitle>Revise os horarios</AlertTitle>
               <AlertDescription>{errorMessage}</AlertDescription>
             </Alert>
           ) : null}
@@ -294,7 +294,7 @@ export function ProfissionalHorarios() {
             </Button>
             <Button type="button" onClick={handleSave}>
               <Save className="h-4 w-4" />
-              Salvar horários
+              Salvar horarios
             </Button>
           </div>
         </div>
