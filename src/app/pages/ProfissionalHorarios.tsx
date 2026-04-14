@@ -30,7 +30,7 @@ import {
   type WeekDayKey,
 } from "../data/professionals";
 import { getApiErrorMessage } from "../lib/api-error";
-import { createProfessionalsService } from "../services/professionals";
+import { createProfessionalsService, type ProfessionalApiItem } from "../services/professionals";
 
 function getInitials(name: string) {
   return name
@@ -46,23 +46,36 @@ export function ProfissionalHorarios() {
   const navigate = useNavigate();
   const params = useParams();
   const professionalId = params.professionalId ? Number(params.professionalId) : null;
-  const professional = useMemo(
+  const cachedProfessional = useMemo(
     () => (professionalId === null ? null : getProfessionalById(professionalId)),
     [professionalId],
   );
+  const [professional, setProfessional] = useState<ProfessionalApiItem | null>(
+    cachedProfessional
+      ? {
+          id: cachedProfessional.id,
+          name: cachedProfessional.name,
+          email: cachedProfessional.email,
+          phone: cachedProfessional.phone,
+          specialty: cachedProfessional.specialty,
+          status: cachedProfessional.status,
+        }
+      : null,
+  );
 
-  const [workDays, setWorkDays] = useState<ProfessionalWorkDay[]>(() => professional?.workDays ?? createDefaultWorkDays());
+  const [workDays, setWorkDays] = useState<ProfessionalWorkDay[]>(
+    () => cachedProfessional?.workDays ?? createDefaultWorkDays(),
+  );
   const [expandedBreaks, setExpandedBreaks] = useState<Record<WeekDayKey, boolean>>(() =>
-    Object.fromEntries((professional?.workDays ?? createDefaultWorkDays()).map((workDay) => [workDay.day, false])) as Record<
-      WeekDayKey,
-      boolean
-    >,
+    Object.fromEntries(
+      (cachedProfessional?.workDays ?? createDefaultWorkDays()).map((workDay) => [workDay.day, false]),
+    ) as Record<WeekDayKey, boolean>,
   );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
-  if (professionalId === null || !professional) {
+  if (professionalId === null) {
     return <Navigate to="/profissionais" replace />;
   }
 
@@ -77,19 +90,26 @@ export function ProfissionalHorarios() {
 
     const loadWorkDays = async () => {
       try {
-        const response = await createProfessionalsService(token).listWorkDays(professional.id);
+        const professionalsService = createProfessionalsService(token);
+        const [professionalResponse, workDaysResponse] = await Promise.all([
+          professionalsService.getById(professionalId),
+          professionalsService.listWorkDays(professionalId),
+        ]);
 
         if (!isMounted) {
           return;
         }
 
-        setWorkDays(mapWorkDaysFromApi(response.data));
+        setProfessional(professionalResponse.professional);
+        setWorkDays(mapWorkDaysFromApi(workDaysResponse.data));
       } catch (error) {
         if (!isMounted) {
           return;
         }
 
-        setErrorMessage(getApiErrorMessage(error, "Nao foi possivel carregar os horarios do profissional."));
+        setErrorMessage(
+          getApiErrorMessage(error, "Nao foi possivel carregar os dados do profissional."),
+        );
       } finally {
         if (isMounted) {
           setIsLoading(false);
@@ -102,9 +122,14 @@ export function ProfissionalHorarios() {
     return () => {
       isMounted = false;
     };
-  }, [professional.id, token]);
+  }, [professionalId, token]);
+
+  if (!professional && !isLoading) {
+    return <Navigate to="/profissionais" replace />;
+  }
 
   const activeDaysCount = getActiveWorkDaysCount({ workDays });
+  const professionalName = professional?.name ?? "Profissional";
 
   const updateWorkDay = (day: WeekDayKey, updater: (current: ProfessionalWorkDay) => ProfessionalWorkDay) => {
     setErrorMessage(null);
@@ -150,6 +175,12 @@ export function ProfissionalHorarios() {
     setIsSaving(true);
 
     try {
+      if (!professional) {
+        setErrorMessage("Profissional nao encontrado.");
+        setIsSaving(false);
+        return;
+      }
+
       const professionalsService = createProfessionalsService(token);
       const response = await professionalsService.updateWorkDays(
         professional.id,
@@ -195,10 +226,10 @@ export function ProfissionalHorarios() {
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/20 text-2xl font-semibold">
-                {getInitials(professional.name)}
+                {getInitials(professionalName)}
               </div>
               <div>
-                <p className="text-2xl font-semibold">{professional.name}</p>
+                <p className="text-2xl font-semibold">{professionalName}</p>
                 <p className="text-base text-white/85">Rotina semanal de atendimento</p>
               </div>
             </div>

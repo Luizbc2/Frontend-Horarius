@@ -44,6 +44,10 @@ export type CreateProfessionalResponse = {
   professional: ProfessionalApiItem;
 };
 
+export type GetProfessionalResponse = {
+  professional: ProfessionalApiItem;
+};
+
 export type UpdateProfessionalResponse = {
   message: string;
   professional: ProfessionalApiItem;
@@ -69,6 +73,7 @@ export const createProfessionalsService = (token: string) => {
   });
 
   return {
+    getById: (id: number) => entityService.get<GetProfessionalResponse>(id),
     list: (query?: ListQueryParams) => entityService.list<ProfessionalApiItem>(query),
     create: (body: CreateProfessionalRequest) =>
       entityService.create<CreateProfessionalResponse, CreateProfessionalRequest>(body),
