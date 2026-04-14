@@ -23,6 +23,10 @@ const createAuthHeaders = (token: string) => ({
 });
 
 export const createEntityService = ({ resourcePath, token }: EntityServiceConfig) => ({
+  get: <TResponse>(id: EntityId) =>
+    api.get<TResponse>(`${resourcePath}/${id}`, {
+      headers: createAuthHeaders(token),
+    }),
   list: <T>(query?: ListQueryParams) =>
     api.get<PaginatedResponse<T>>(resourcePath, {
       headers: createAuthHeaders(token),

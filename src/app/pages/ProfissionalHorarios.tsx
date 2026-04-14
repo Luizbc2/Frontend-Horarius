@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -12,20 +12,25 @@ import {
 } from "lucide-react";
 import { Link, Navigate, useNavigate, useParams } from "react-router";
 
+import { useAuth } from "../auth/AuthContext";
 import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert";
 import { PageShell, SectionCard } from "../components/PageShell";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Switch } from "../components/ui/switch";
 import {
+  createDefaultWorkDays,
   getActiveWorkDaysCount,
   getProfessionalById,
   updateProfessionalWorkDays,
   validateProfessionalWorkDays,
+  WEEK_DAYS,
   WEEK_DAY_LABELS,
   type ProfessionalWorkDay,
   type WeekDayKey,
 } from "../data/professionals";
+import { getApiErrorMessage } from "../lib/api-error";
+import { createProfessionalsService } from "../services/professionals";
 
 function getInitials(name: string) {
   return name
@@ -37,6 +42,7 @@ function getInitials(name: string) {
 }
 
 export function ProfissionalHorarios() {
+  const { token } = useAuth();
   const navigate = useNavigate();
   const params = useParams();
   const professionalId = params.professionalId ? Number(params.professionalId) : null;
@@ -45,18 +51,58 @@ export function ProfissionalHorarios() {
     [professionalId],
   );
 
-  const [workDays, setWorkDays] = useState<ProfessionalWorkDay[]>(() => professional?.workDays ?? []);
+  const [workDays, setWorkDays] = useState<ProfessionalWorkDay[]>(() => professional?.workDays ?? createDefaultWorkDays());
   const [expandedBreaks, setExpandedBreaks] = useState<Record<WeekDayKey, boolean>>(() =>
-    Object.fromEntries((professional?.workDays ?? []).map((workDay) => [workDay.day, false])) as Record<
+    Object.fromEntries((professional?.workDays ?? createDefaultWorkDays()).map((workDay) => [workDay.day, false])) as Record<
       WeekDayKey,
       boolean
     >,
   );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
   if (professionalId === null || !professional) {
     return <Navigate to="/profissionais" replace />;
   }
+
+  useEffect(() => {
+    if (!token) {
+      setIsLoading(false);
+      setErrorMessage("Sua sessao expirou. Entre novamente para continuar.");
+      return;
+    }
+
+    let isMounted = true;
+
+    const loadWorkDays = async () => {
+      try {
+        const response = await createProfessionalsService(token).listWorkDays(professional.id);
+
+        if (!isMounted) {
+          return;
+        }
+
+        setWorkDays(mapWorkDaysFromApi(response.data));
+      } catch (error) {
+        if (!isMounted) {
+          return;
+        }
+
+        setErrorMessage(getApiErrorMessage(error, "Nao foi possivel carregar os horarios do profissional."));
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    void loadWorkDays();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [professional.id, token]);
 
   const activeDaysCount = getActiveWorkDaysCount({ workDays });
 
@@ -88,7 +134,7 @@ export function ProfissionalHorarios() {
     );
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const validationMessage = validateProfessionalWorkDays(workDays);
 
     if (validationMessage) {
@@ -96,12 +142,38 @@ export function ProfissionalHorarios() {
       return;
     }
 
-    updateProfessionalWorkDays(professional.id, workDays);
+    if (!token) {
+      setErrorMessage("Sua sessao expirou. Entre novamente para continuar.");
+      return;
+    }
 
-    navigate("/profissionais", {
-      replace: true,
-      state: { notice: "Horarios do profissional salvos com sucesso." },
-    });
+    setIsSaving(true);
+
+    try {
+      const professionalsService = createProfessionalsService(token);
+      const response = await professionalsService.updateWorkDays(
+        professional.id,
+        workDays.map((workDay) => ({
+          dayOfWeek: workDay.day,
+          enabled: workDay.enabled,
+          startTime: workDay.startTime,
+          endTime: workDay.endTime,
+          breakStart: workDay.breakStart || null,
+          breakEnd: workDay.breakEnd || null,
+        })),
+      );
+
+      updateProfessionalWorkDays(professional.id, mapWorkDaysFromApi(response.workDays));
+
+      navigate("/profissionais", {
+        replace: true,
+        state: { notice: response.message },
+      });
+    } catch (error) {
+      setErrorMessage(getApiErrorMessage(error, "Nao foi possivel salvar os horarios do profissional."));
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -146,7 +218,14 @@ export function ProfissionalHorarios() {
             </Alert>
           ) : null}
 
-          {workDays.map((workDay) => {
+          {isLoading ? (
+            <div className="rounded-[1.6rem] border border-[rgba(74,52,34,0.12)] bg-white/88 p-6 text-sm text-muted-foreground">
+              Carregando horarios do profissional...
+            </div>
+          ) : null}
+
+          {!isLoading
+            ? workDays.map((workDay) => {
             const isBreakOpen = expandedBreaks[workDay.day] ?? false;
 
             return (
@@ -274,7 +353,8 @@ export function ProfissionalHorarios() {
                 ) : null}
               </div>
             );
-          })}
+          })
+            : null}
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[rgba(74,52,34,0.08)] bg-white/75 px-6 py-5">
@@ -292,13 +372,50 @@ export function ProfissionalHorarios() {
             <Button type="button" variant="outline" asChild>
               <Link to="/profissionais">Cancelar</Link>
             </Button>
-            <Button type="button" onClick={handleSave}>
+            <Button type="button" onClick={() => void handleSave()} disabled={isSaving || isLoading}>
               <Save className="h-4 w-4" />
-              Salvar horarios
+              {isSaving ? "Salvando..." : "Salvar horarios"}
             </Button>
           </div>
         </div>
       </SectionCard>
     </PageShell>
+  );
+}
+
+function mapWorkDaysFromApi(
+  workDays: Array<{
+    dayOfWeek: string;
+    enabled: boolean;
+    startTime: string;
+    endTime: string;
+    breakStart: string | null;
+    breakEnd: string | null;
+  }>,
+): ProfessionalWorkDay[] {
+  const workDaysByKey = new Map(
+    workDays.map((workDay) => [
+      workDay.dayOfWeek,
+      {
+        day: workDay.dayOfWeek as WeekDayKey,
+        enabled: workDay.enabled,
+        startTime: workDay.startTime || "09:00",
+        endTime: workDay.endTime || "18:00",
+        breakStart: workDay.breakStart ?? "",
+        breakEnd: workDay.breakEnd ?? "",
+      },
+    ]),
+  );
+
+  return WEEK_DAYS.map(
+    (day) =>
+      workDaysByKey.get(day) ?? {
+        day,
+        enabled: false,
+        startTime: "09:00",
+        endTime: "18:00",
+        breakStart: "",
+        breakEnd: "",
+      },
   );
 }
