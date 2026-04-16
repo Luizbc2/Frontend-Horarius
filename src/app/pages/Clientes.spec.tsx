@@ -83,7 +83,7 @@ describe("Clientes page flow", () => {
 
       if (url.includes("/clients/1") && method === "DELETE") {
         return createJsonResponse({
-          message: "Cliente excluído com sucesso.",
+          message: "Cliente excluÃ­do com sucesso.",
         });
       }
 
@@ -103,7 +103,7 @@ describe("Clientes page flow", () => {
     expect(await screen.findByText("Ana Silva")).toBeInTheDocument();
     expect(screen.getByText("Cliente VIP")).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: /Excluir/i }));
+    await user.click(screen.getByRole("button", { name: /Remover/i }));
 
     expect(await screen.findByText("Nenhum cliente cadastrado")).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledTimes(3);

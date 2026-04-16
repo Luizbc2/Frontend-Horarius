@@ -79,7 +79,7 @@ describe("Login page", () => {
       },
     });
 
-    expect(screen.getByText("Cadastro concluído")).toBeInTheDocument();
+    expect(screen.getByText("Conta criada")).toBeInTheDocument();
     expect(screen.getByText("Conta criada com sucesso.")).toBeInTheDocument();
   });
 });
