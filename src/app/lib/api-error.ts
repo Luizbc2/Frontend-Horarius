@@ -18,9 +18,18 @@ export function isApiErrorWithStatus(error: ApiErrorInput, status: number): erro
 }
 
 export function isMissingAuthTokenError(error: ApiErrorInput): boolean {
+  const normalizedMessage =
+    error instanceof ApiError
+      ? error.message
+          .trim()
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+      : "";
+
   return (
     error instanceof ApiError &&
     error.status === 401 &&
-    error.message.trim().toLowerCase() === "o token de autenticacao e obrigatorio."
+    normalizedMessage === "o token de autenticacao e obrigatorio."
   );
 }

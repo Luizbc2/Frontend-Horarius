@@ -73,6 +73,7 @@ export function validateClientForm(formData: ClientFormData) {
     label: "As observações",
     maxLength: FIELD_LIMITS.notes,
     minLength: 3,
+    required: false,
   });
 
   if (nameError) {
@@ -96,7 +97,7 @@ export function validateClientForm(formData: ClientFormData) {
   }
 
   if (normalizedCpf && normalizedCpf.length > FIELD_LIMITS.cpfFormatted) {
-    errors.cpf = `O CPF deve ter no maximo ${FIELD_LIMITS.cpfFormatted} caracteres.`;
+    errors.cpf = `O CPF deve ter no máximo ${FIELD_LIMITS.cpfFormatted} caracteres.`;
   }
 
   return errors;

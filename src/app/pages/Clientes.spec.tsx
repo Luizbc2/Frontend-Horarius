@@ -149,7 +149,7 @@ describe("Clientes page flow", () => {
     await user.type(screen.getByLabelText("Nome"), "Carlos Lima");
     await user.type(screen.getByLabelText("E-mail"), "carlos@example.com");
     await user.type(screen.getByLabelText("Telefone"), "11988887777");
-    await user.type(screen.getByLabelText("Observações"), "Primeiro atendimento");
+    await user.type(screen.getByLabelText(/Observa/), "Primeiro atendimento");
     await user.click(screen.getByRole("button", { name: /Cadastrar cliente/i }));
 
     expect(await screen.findByText("Cliente cadastrado com sucesso.")).toBeInTheDocument();

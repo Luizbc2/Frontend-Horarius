@@ -103,7 +103,7 @@ export function validateProfileForm(formData: ProfileFormData) {
   if (!formData.password.trim()) {
     errors.password = "Informe uma nova senha.";
   } else if (formData.password.length > FIELD_LIMITS.password) {
-    errors.password = `A senha deve ter no maximo ${FIELD_LIMITS.password} caracteres.`;
+    errors.password = `A senha deve ter no máximo ${FIELD_LIMITS.password} caracteres.`;
   } else {
     const passwordError = validatePasswordStrength(formData.password);
 

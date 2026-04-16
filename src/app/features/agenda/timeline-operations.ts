@@ -1,15 +1,11 @@
 import type { CreateAppointmentRequest, UpdateAppointmentRequest } from "../../services/appointments";
 import type { CreateClientRequest } from "../../services/clients";
-import { normalizeCpf, validateCpf } from "../../lib/cpf";
-import {
-  FIELD_LIMITS,
-  validateEmailField,
-  validatePhoneField,
-  validateTextField,
-} from "../../lib/field-rules";
+import { normalizeCpf } from "../../lib/cpf";
+import { FIELD_LIMITS, validateTextField } from "../../lib/field-rules";
 import { normalizePhone } from "../../data/clients";
 import {
   APPOINTMENT_DURATION_IN_MINUTES,
+  DAY_END_HOUR,
   buildScheduledAt,
   timeToMinutes,
   type AppointmentDraft,
@@ -24,6 +20,7 @@ type TimelineSlot = {
 
 type TimelineConflictInput = {
   appointments: TimelineAppointment[];
+  durationMinutes?: number;
   excludedAppointmentId?: number;
   slot: TimelineSlot;
 };
@@ -49,6 +46,7 @@ export function createTimelineEditDraft(appointment: TimelineAppointment): Appoi
 export function validateTimelineCreateDraft(
   draft: NewAppointmentDraft,
   appointments: TimelineAppointment[],
+  durationMinutes = APPOINTMENT_DURATION_IN_MINUTES,
 ): string | null {
   const serviceId = Number(draft.serviceId);
   const professionalId = Number(draft.professionalId);
@@ -63,32 +61,23 @@ export function validateTimelineCreateDraft(
       maxLength: FIELD_LIMITS.clientName,
       minLength: 2,
     });
-    const emailError = validateEmailField(draft.clientEmail);
-    const phoneError = validatePhoneField(draft.clientPhone);
-    const normalizedCpf = normalizeCpf(draft.clientCpf);
 
     if (nameError) {
       return nameError;
     }
-
-    if (emailError) {
-      return emailError;
-    }
-
-    if (phoneError) {
-      return phoneError;
-    }
-
-    if (normalizedCpf && !validateCpf(normalizedCpf)) {
-      return "Digite um CPF valido.";
-    }
   }
 
   if (!Number(draft.clientId) && !draft.clientName.trim()) {
-    return "Informe os dados do novo cliente ou selecione um cadastro existente.";
+    return "Informe o nome do cliente ou selecione um cadastro existente.";
   }
 
-  if (hasTimelineSlotConflict({ appointments, slot: { professionalId: String(professionalId), time: draft.time } })) {
+  if (
+    hasTimelineSlotConflict({
+      appointments,
+      slot: { professionalId: String(professionalId), time: draft.time },
+      durationMinutes,
+    })
+  ) {
     return "Ja existe um agendamento nesse horario.";
   }
 
@@ -99,6 +88,7 @@ export function validateTimelineEditDraft(
   appointments: TimelineAppointment[],
   appointmentId: number,
   draft: AppointmentDraft,
+  durationMinutes = APPOINTMENT_DURATION_IN_MINUTES,
 ): string | null {
   if (!draft.client.trim() || !draft.service.trim()) {
     return "Preencha cliente e serviço.";
@@ -112,6 +102,7 @@ export function validateTimelineEditDraft(
         professionalId: draft.professionalId,
         time: draft.time,
       },
+      durationMinutes,
     })
   ) {
     return "Ja existe um agendamento nesse horario.";
@@ -242,9 +233,10 @@ export function hasTimelineOverlap(
   appointments: TimelineAppointment[],
   appointmentId: number,
   slot: TimelineSlot,
+  durationMinutes = APPOINTMENT_DURATION_IN_MINUTES,
 ): boolean {
   const targetStart = timeToMinutes(slot.time);
-  const targetEnd = targetStart + APPOINTMENT_DURATION_IN_MINUTES;
+  const targetEnd = targetStart + durationMinutes;
 
   return appointments.some((appointment) => {
     if (appointment.id === appointmentId || appointment.professionalId !== slot.professionalId) {
@@ -252,9 +244,38 @@ export function hasTimelineOverlap(
     }
 
     const appointmentStart = timeToMinutes(appointment.time);
-    const appointmentEnd = appointmentStart + APPOINTMENT_DURATION_IN_MINUTES;
+    const appointmentEnd = appointmentStart + appointment.durationMinutes;
 
     return targetStart < appointmentEnd && targetEnd > appointmentStart;
+  });
+}
+
+export function getAvailableTimelineSlots(
+  appointments: TimelineAppointment[],
+  professionalId: string,
+  timeSlots: string[],
+  durationMinutes = APPOINTMENT_DURATION_IN_MINUTES,
+): string[] {
+  if (!professionalId) {
+    return [];
+  }
+
+  const dayEndInMinutes = DAY_END_HOUR * 60;
+
+  return timeSlots.filter((time) => {
+    const startInMinutes = timeToMinutes(time);
+    const endInMinutes = startInMinutes + durationMinutes;
+
+    if (endInMinutes > dayEndInMinutes) {
+      return false;
+    }
+
+    return !hasTimelineOverlap(
+      appointments,
+      Number.NaN,
+      { professionalId, time },
+      durationMinutes,
+    );
   });
 }
 
@@ -288,11 +309,19 @@ function hasTimelineSlotConflict({
   appointments,
   excludedAppointmentId,
   slot,
+  durationMinutes = APPOINTMENT_DURATION_IN_MINUTES,
 }: TimelineConflictInput): boolean {
-  return appointments.some(
-    (appointment) =>
-      appointment.id !== excludedAppointmentId &&
-      appointment.professionalId === slot.professionalId &&
-      appointment.time === slot.time,
-  );
+  const targetStart = timeToMinutes(slot.time);
+  const targetEnd = targetStart + durationMinutes;
+
+  return appointments.some((appointment) => {
+    if (appointment.id === excludedAppointmentId || appointment.professionalId !== slot.professionalId) {
+      return false;
+    }
+
+    const appointmentStart = timeToMinutes(appointment.time);
+    const appointmentEnd = appointmentStart + appointment.durationMinutes;
+
+    return targetStart < appointmentEnd && targetEnd > appointmentStart;
+  });
 }

@@ -101,7 +101,7 @@ export function AgendaLista() {
 
         if (!isMissingAuthTokenError(error)) {
           toast.error(
-            getApiErrorMessage(error, "Nao foi possivel carregar clientes, profissionais e servicos."),
+            getApiErrorMessage(error, "Não foi possível carregar clientes, profissionais e serviços."),
           );
         }
       }
@@ -149,7 +149,7 @@ export function AgendaLista() {
         setAppointments([]);
 
         if (!isMissingAuthTokenError(error)) {
-          toast.error(getApiErrorMessage(error, "Nao foi possivel carregar os agendamentos."));
+          toast.error(getApiErrorMessage(error, "Não foi possível carregar os agendamentos."));
         }
       } finally {
         if (isMounted) {
@@ -213,7 +213,7 @@ export function AgendaLista() {
     }
 
     if (!token) {
-      toast.error("Sua sessao expirou. Entre novamente para continuar.");
+      toast.error("Sua sessão expirou. Entre novamente para continuar.");
       return;
     }
 
@@ -242,7 +242,7 @@ export function AgendaLista() {
       toast.success(response.message);
       resetEditDialog();
     } catch (error) {
-      toast.error(getApiErrorMessage(error, "Nao foi possivel atualizar o agendamento."));
+      toast.error(getApiErrorMessage(error, "Não foi possível atualizar o agendamento."));
     }
   };
 
@@ -251,7 +251,7 @@ export function AgendaLista() {
     status: AppointmentStatus,
   ) => {
     if (!token) {
-      toast.error("Sua sessao expirou. Entre novamente para continuar.");
+      toast.error("Sua sessão expirou. Entre novamente para continuar.");
       return;
     }
 
@@ -266,13 +266,13 @@ export function AgendaLista() {
 
       toast.success(response.message);
     } catch (error) {
-      toast.error(getApiErrorMessage(error, "Nao foi possivel atualizar o agendamento."));
+      toast.error(getApiErrorMessage(error, "Não foi possível atualizar o agendamento."));
     }
   };
 
   const handleDeleteAppointment = async (appointment: AgendaListItem) => {
     if (!token) {
-      toast.error("Sua sessao expirou. Entre novamente para continuar.");
+      toast.error("Sua sessão expirou. Entre novamente para continuar.");
       return;
     }
 
@@ -286,7 +286,7 @@ export function AgendaLista() {
 
       toast.success(response.message);
     } catch (error) {
-      toast.error(getApiErrorMessage(error, "Nao foi possivel excluir o agendamento."));
+      toast.error(getApiErrorMessage(error, "Não foi possível excluir o agendamento."));
     }
   };
 
@@ -294,7 +294,7 @@ export function AgendaLista() {
     <PageShell
       eyebrow="Gestao diaria"
       title="Lista de agendamentos"
-      description="Filtre a operacao por profissional, status e busca textual para encontrar rapidamente qualquer atendimento do dia."
+      description="Filtre a operação por profissional, status e busca textual para encontrar rapidamente qualquer atendimento do dia."
       actions={
         <>
           <Button variant="outline" onClick={handleRefresh}>
@@ -368,7 +368,7 @@ export function AgendaLista() {
             <Input
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
-              placeholder="Buscar cliente, servico ou profissional"
+              placeholder="Buscar cliente, serviço ou profissional"
               className="pl-11"
             />
           </div>

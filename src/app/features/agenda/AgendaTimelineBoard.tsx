@@ -10,7 +10,6 @@ import {
 } from "../../components/ui/dropdown-menu";
 import { cn } from "../../components/ui/utils";
 import {
-  APPOINTMENT_DURATION_IN_MINUTES,
   DAY_START_HOUR,
   SLOT_HEIGHT,
   SLOT_INTERVAL_MINUTES,
@@ -175,7 +174,7 @@ export function AgendaTimelineBoard({
                     ((timeToMinutes(appointment.time) - DAY_START_HOUR * 60) / SLOT_INTERVAL_MINUTES) *
                     SLOT_HEIGHT;
                   const height =
-                    (APPOINTMENT_DURATION_IN_MINUTES / SLOT_INTERVAL_MINUTES) * SLOT_HEIGHT - 6;
+                    (appointment.durationMinutes / SLOT_INTERVAL_MINUTES) * SLOT_HEIGHT - 6;
 
                   return (
                     <div

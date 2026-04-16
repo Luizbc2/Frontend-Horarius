@@ -21,6 +21,6 @@ describe("field rules", () => {
   test("validates phone and currency fields", () => {
     expect(validatePhoneField("11999999999")).toBeUndefined();
     expect(validatePhoneField("abc")).toBe("Digite um telefone valido com DDD.");
-    expect(validateCurrencyField("-10", "O preco")).toBe("O preco deve ser um valor positivo ou zero.");
+    expect(validateCurrencyField("-10", "O preço")).toBe("O preço deve ser um valor positivo ou zero.");
   });
 });

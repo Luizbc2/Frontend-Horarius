@@ -8,6 +8,7 @@ export type TimelineAppointment = {
   client: string;
   serviceId: number;
   service: string;
+  durationMinutes: number;
   professionalId: string;
   status: AppointmentStatus;
   notes: string;
@@ -92,11 +93,35 @@ export function timeToMinutes(time: string) {
 }
 
 export function formatDateForApi(date: Date) {
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
   const year = date.getFullYear();
   const month = padTime(date.getMonth() + 1);
   const day = padTime(date.getDate());
 
   return `${year}-${month}-${day}`;
+}
+
+export function parseDateInput(value: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return null;
+  }
+
+  const [year, month, day] = value.split("-").map(Number);
+  const parsedDate = new Date(year, month - 1, day, 12, 0, 0, 0);
+
+  if (
+    Number.isNaN(parsedDate.getTime()) ||
+    parsedDate.getFullYear() !== year ||
+    parsedDate.getMonth() !== month - 1 ||
+    parsedDate.getDate() !== day
+  ) {
+    return null;
+  }
+
+  return parsedDate;
 }
 
 export function formatAppointmentTime(scheduledAt: string) {
@@ -147,8 +172,20 @@ export function mapTimelineAppointment(appointment: AppointmentApiItem): Timelin
     client: appointment.clientName,
     serviceId: appointment.serviceId,
     service: appointment.serviceName,
+    durationMinutes: APPOINTMENT_DURATION_IN_MINUTES,
     professionalId: String(appointment.professionalId),
     status: appointment.status,
     notes: appointment.notes,
   };
+}
+
+export function applyServiceDurationsToAppointments(
+  appointments: TimelineAppointment[],
+  serviceDurations: Map<number, number>,
+) {
+  return appointments.map((appointment) => ({
+    ...appointment,
+    durationMinutes:
+      serviceDurations.get(appointment.serviceId) ?? appointment.durationMinutes ?? APPOINTMENT_DURATION_IN_MINUTES,
+  }));
 }

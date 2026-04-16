@@ -287,7 +287,7 @@ export function ClienteFormulario() {
             </div>
 
             <div className="grid gap-2 md:col-span-2">
-              <label htmlFor="client-notes">Observações</label>
+              <label htmlFor="client-notes">Observações (opcional)</label>
               <Textarea
                 id="client-notes"
                 value={formData.notes}
@@ -298,7 +298,7 @@ export function ClienteFormulario() {
               />
               {!formErrors.notes ? (
                 <p className="text-sm text-muted-foreground">
-                  Anote preferências, restrições ou qualquer detalhe útil para o próximo atendimento.
+                  Você pode deixar este campo em branco. Se preencher, use pelo menos 3 caracteres.
                 </p>
               ) : (
                 <p className="text-sm text-destructive">{formErrors.notes}</p>

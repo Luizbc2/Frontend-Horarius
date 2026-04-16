@@ -84,7 +84,7 @@ export function ServicoFormulario() {
           return;
         }
 
-        setSubmitError(getApiErrorMessage(error, "Nao foi possivel carregar o servico."));
+        setSubmitError(getApiErrorMessage(error, "Não foi possível carregar o serviço."));
       } finally {
         if (isMounted) {
           setIsLoadingService(false);
@@ -129,7 +129,7 @@ export function ServicoFormulario() {
     }
 
     if (!token) {
-      setSubmitError("Sua sessao expirou. Entre novamente para continuar.");
+      setSubmitError("Sua sessão expirou. Entre novamente para continuar.");
       return;
     }
 
@@ -153,7 +153,7 @@ export function ServicoFormulario() {
         });
         return;
       } catch (error) {
-        setSubmitError(getApiErrorMessage(error, "Nao foi possivel atualizar o servico."));
+        setSubmitError(getApiErrorMessage(error, "Não foi possível atualizar o serviço."));
         setIsSubmitting(false);
         return;
       }
@@ -174,7 +174,7 @@ export function ServicoFormulario() {
         state: { notice: response.message },
       });
     } catch (error) {
-      setSubmitError(getApiErrorMessage(error, "Nao foi possivel cadastrar o servico."));
+      setSubmitError(getApiErrorMessage(error, "Não foi possível cadastrar o serviço."));
     } finally {
       setIsSubmitting(false);
     }
@@ -184,9 +184,9 @@ export function ServicoFormulario() {
 
   return (
     <PageShell
-      eyebrow="Servicos"
-      title={isEditing ? "Editar servico" : "Novo servico"}
-      description="Formulario separado da listagem para manter o CRUD completo."
+      eyebrow="Serviços"
+      title={isEditing ? "Editar serviço" : "Novo serviço"}
+      description="Preencha as informações para cadastrar um novo serviço"
       actions={
         <Button variant="outline" asChild>
           <Link to="/servicos">
@@ -199,28 +199,28 @@ export function ServicoFormulario() {
       <form noValidate onSubmit={handleSubmit} className="grid gap-6">
         {isEditing && isLoadingService ? (
           <Alert className="border-border/60 bg-white/70">
-            <AlertTitle>Carregando servico</AlertTitle>
-            <AlertDescription>Buscando os dados para preencher o formulario.</AlertDescription>
+            <AlertTitle>Carregando serviço</AlertTitle>
+            <AlertDescription>Buscando os dados para preencher o formulário.</AlertDescription>
           </Alert>
         ) : null}
 
         {hasErrors ? (
           <Alert variant="destructive" className="border-destructive/20 bg-destructive/5">
-            <AlertTitle>Formulario invalido</AlertTitle>
+            <AlertTitle>Formulário inválido</AlertTitle>
             <AlertDescription>Revise os campos marcados antes de salvar.</AlertDescription>
           </Alert>
         ) : null}
 
         {submitError ? (
           <Alert variant="destructive" className="border-destructive/20 bg-destructive/5">
-            <AlertTitle>Nao foi possivel salvar</AlertTitle>
+            <AlertTitle>Não foi possível salvar</AlertTitle>
             <AlertDescription>{submitError}</AlertDescription>
           </Alert>
         ) : null}
 
         <SectionCard
-          title="Dados do servico"
-          description="Preencha os dados principais do servico. A descricao pode ficar em branco, se preferir."
+          title="Dados do serviço"
+          description="Preencha os dados principais do serviço. A descrição pode ficar em branco, se preferir."
         >
           <div className="grid gap-4 md:grid-cols-2">
             <div className="grid gap-2">
@@ -248,7 +248,7 @@ export function ServicoFormulario() {
             </div>
 
             <div className="grid gap-2">
-              <label htmlFor="service-duration">Duracao (minutos)</label>
+              <label htmlFor="service-duration">Duração (minutos)</label>
               <Input
                 id="service-duration"
                 type="text"
@@ -264,7 +264,7 @@ export function ServicoFormulario() {
             </div>
 
             <div className="grid gap-2">
-              <label htmlFor="service-price">Preco</label>
+              <label htmlFor="service-price">Preço</label>
               <Input
                 id="service-price"
                 type="text"
@@ -278,7 +278,7 @@ export function ServicoFormulario() {
             </div>
 
             <div className="grid gap-2 md:col-span-2">
-              <label htmlFor="service-description">Descricao opcional</label>
+              <label htmlFor="service-description">Descrição opcional</label>
               <Textarea
                 id="service-description"
                 rows={4}
@@ -286,13 +286,13 @@ export function ServicoFormulario() {
                 onChange={(event) => handleChange("description", event.target.value)}
                 aria-invalid={Boolean(formErrors.description)}
                 maxLength={FIELD_LIMITS.serviceDescription}
-                placeholder="Escreva algo sobre o servico, se quiser."
+                placeholder="Escreva algo sobre o serviço, se quiser."
               />
               {formErrors.description ? (
                 <p className="text-sm text-destructive">{formErrors.description}</p>
               ) : (
                 <p className="text-sm text-muted-foreground">
-                  Voce pode deixar esse campo vazio e cadastrar o servico normalmente.
+                  Você pode deixar esse campo vazio e cadastrar o serviço normalmente.
                 </p>
               )}
             </div>
@@ -302,7 +302,7 @@ export function ServicoFormulario() {
         <div className="flex flex-wrap gap-3">
           <Button type="submit" disabled={isSubmitting}>
             <Save className="h-4 w-4" />
-            {isSubmitting ? "Salvando..." : isEditing ? "Salvar alteracoes" : "Cadastrar servico"}
+            {isSubmitting ? "Salvando..." : isEditing ? "Salvar alterações" : "Cadastrar serviço"}
           </Button>
           <Button type="button" variant="outline" asChild>
             <Link to="/servicos">Cancelar</Link>

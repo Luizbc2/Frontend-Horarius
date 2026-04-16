@@ -14,7 +14,9 @@ import {
 
 import { useAuth } from "../auth/AuthContext";
 import { Button } from "../components/ui/button";
+import { Calendar } from "../components/ui/calendar";
 import { EmptyStatePanel, MetricCard, PageShell, SectionCard } from "../components/PageShell";
+import { Popover, PopoverContent, PopoverTrigger } from "../components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -25,12 +27,15 @@ import {
 import { AgendaAppointmentDialogs } from "../features/agenda/AgendaAppointmentDialogs";
 import { AgendaTimelineBoard } from "../features/agenda/AgendaTimelineBoard";
 import {
+  APPOINTMENT_DURATION_IN_MINUTES,
+  applyServiceDurationsToAppointments,
   createAppointmentDraft,
   createNewAppointmentDraft,
   formatDateForApi,
   generateTimeSlots,
   mapTimelineAppointment,
   SLOT_HEIGHT,
+  timeToMinutes,
   type AppointmentDraft,
   type NewAppointmentDraft,
   type TimelineAppointment,
@@ -44,6 +49,7 @@ import {
   createTimelineEditDraft,
   findTimelineAppointment,
   findTimelineTargetAppointment,
+  getAvailableTimelineSlots,
   hasTimelineOverlap,
   moveTimelineAppointment,
   swapTimelineAppointments,
@@ -187,6 +193,10 @@ export function AgendaTimeline() {
       return;
     }
 
+    if (Number.isNaN(selectedDate.getTime())) {
+      return;
+    }
+
     let isMounted = true;
 
     const loadAppointments = async () => {
@@ -234,6 +244,14 @@ export function AgendaTimeline() {
 
   const timeSlots = useMemo(() => generateTimeSlots(), []);
   const timelineHeight = timeSlots.length * SLOT_HEIGHT;
+  const serviceDurations = useMemo(
+    () => new Map(services.map((service) => [service.id, service.durationMinutes])),
+    [services],
+  );
+  const appointmentsWithDurations = useMemo(
+    () => applyServiceDurationsToAppointments(appointments, serviceDurations),
+    [appointments, serviceDurations],
+  );
 
   const visibleProfessionals = useMemo(() => {
     if (selectedProfessional === "todos") {
@@ -245,7 +263,7 @@ export function AgendaTimeline() {
 
   const filteredAppointments = useMemo(
     () =>
-      appointments.filter((appointment) => {
+      appointmentsWithDurations.filter((appointment) => {
         if (selectedProfessional !== "todos" && appointment.professionalId !== selectedProfessional) {
           return false;
         }
@@ -256,7 +274,7 @@ export function AgendaTimeline() {
 
         return true;
       }),
-    [appointments, selectedProfessional, selectedStatus],
+    [appointmentsWithDurations, selectedProfessional, selectedStatus],
   );
 
   const appointmentsByProfessional = useMemo(() => {
@@ -280,11 +298,36 @@ export function AgendaTimeline() {
 
     return grouped;
   }, [filteredAppointments, visibleProfessionals]);
+  const selectedCreateService = useMemo(
+    () => services.find((service) => String(service.id) === newAppointmentDraft.serviceId) ?? null,
+    [newAppointmentDraft.serviceId, services],
+  );
+  const availableCreateTimeSlots = useMemo(() => {
+    if (!newAppointmentDraft.professionalId || !selectedCreateService) {
+      return [];
+    }
+
+    return getAvailableTimelineSlots(
+      appointmentsWithDurations,
+      newAppointmentDraft.professionalId,
+      timeSlots,
+      selectedCreateService.durationMinutes,
+    );
+  }, [
+    appointmentsWithDurations,
+    newAppointmentDraft.professionalId,
+    selectedCreateService,
+    timeSlots,
+  ]);
 
   const confirmedCount = filteredAppointments.filter((appointment) => appointment.status === "confirmado").length;
   const pendingCount = filteredAppointments.filter((appointment) => appointment.status === "pendente").length;
+  const occupiedSlots = filteredAppointments.reduce(
+    (total, appointment) => total + Math.ceil(appointment.durationMinutes / 10),
+    0,
+  );
   const occupancyBase = visibleProfessionals.length * timeSlots.length;
-  const occupancy = occupancyBase > 0 ? Math.round((filteredAppointments.length / occupancyBase) * 100) : 0;
+  const occupancy = occupancyBase > 0 ? Math.round((occupiedSlots / occupancyBase) * 100) : 0;
 
   const formatTitleDate = (date: Date) =>
     date.toLocaleDateString("pt-BR", {
@@ -292,6 +335,14 @@ export function AgendaTimeline() {
       day: "numeric",
       month: "long",
     });
+  const formatCompactDate = (date: Date) =>
+    date.toLocaleDateString("pt-BR", {
+      day: "2-digit",
+      month: "short",
+    });
+  const isToday =
+    selectedDate.toDateString() === new Date().toDateString();
+  const toolbarDateLabel = isToday ? "Hoje" : formatCompactDate(selectedDate);
 
   const previousDay = () => {
     const newDate = new Date(selectedDate);
@@ -308,6 +359,36 @@ export function AgendaTimeline() {
   const today = () => {
     setSelectedDate(new Date());
   };
+
+  useEffect(() => {
+    if (!isCreateDialogOpen) {
+      return;
+    }
+
+    if (!newAppointmentDraft.professionalId || !selectedCreateService) {
+      return;
+    }
+
+    const nextTime =
+      availableCreateTimeSlots.includes(newAppointmentDraft.time)
+        ? newAppointmentDraft.time
+        : (availableCreateTimeSlots[0] ?? "");
+
+    if (nextTime === newAppointmentDraft.time) {
+      return;
+    }
+
+    setNewAppointmentDraft((currentDraft) => ({
+      ...currentDraft,
+      time: nextTime,
+    }));
+  }, [
+    availableCreateTimeSlots,
+    isCreateDialogOpen,
+    newAppointmentDraft.professionalId,
+    newAppointmentDraft.time,
+    selectedCreateService,
+  ]);
 
   const resetCreateDialog = () => {
     setIsCreateDialogOpen(false);
@@ -334,7 +415,11 @@ export function AgendaTimeline() {
       return;
     }
 
-    const validationMessage = validateTimelineCreateDraft(newAppointmentDraft, appointments);
+    const validationMessage = validateTimelineCreateDraft(
+      newAppointmentDraft,
+      appointmentsWithDurations,
+      selectedCreateService?.durationMinutes ?? APPOINTMENT_DURATION_IN_MINUTES,
+    );
 
     if (validationMessage) {
       toast.error(validationMessage);
@@ -414,7 +499,7 @@ export function AgendaTimeline() {
     }
 
     const slot = { professionalId, time };
-    const draggedAppointment = findTimelineAppointment(appointments, draggedAppointmentId);
+    const draggedAppointment = findTimelineAppointment(appointmentsWithDurations, draggedAppointmentId);
 
     if (!draggedAppointment) {
       setDraggedAppointmentId(null);
@@ -422,11 +507,19 @@ export function AgendaTimeline() {
       return;
     }
 
-    const targetAppointment = findTimelineTargetAppointment(appointments, draggedAppointmentId, slot);
+    const targetAppointment = findTimelineTargetAppointment(
+      appointmentsWithDurations,
+      draggedAppointmentId,
+      slot,
+    );
 
     if (targetAppointment) {
       const previousAppointments = appointments;
-      const nextAppointments = swapTimelineAppointments(appointments, draggedAppointment, targetAppointment);
+      const nextAppointments = swapTimelineAppointments(
+        appointmentsWithDurations,
+        draggedAppointment,
+        targetAppointment,
+      );
 
       setAppointments(nextAppointments);
 
@@ -451,7 +544,12 @@ export function AgendaTimeline() {
       return;
     }
 
-    const hasConflict = hasTimelineOverlap(appointments, draggedAppointmentId, slot);
+    const hasConflict = hasTimelineOverlap(
+      appointmentsWithDurations,
+      draggedAppointmentId,
+      slot,
+      draggedAppointment.durationMinutes,
+    );
 
     if (hasConflict) {
       toast.error("Esse horário já está ocupado para esse profissional.");
@@ -461,7 +559,7 @@ export function AgendaTimeline() {
     }
 
     const previousAppointments = appointments;
-    const nextAppointments = moveTimelineAppointment(appointments, draggedAppointmentId, slot);
+    const nextAppointments = moveTimelineAppointment(appointmentsWithDurations, draggedAppointmentId, slot);
 
     setAppointments(nextAppointments);
 
@@ -488,14 +586,19 @@ export function AgendaTimeline() {
       return;
     }
 
-    const validationMessage = validateTimelineEditDraft(appointments, editingAppointmentId, appointmentDraft);
+    const currentAppointment = findTimelineAppointment(appointmentsWithDurations, editingAppointmentId);
+    const validationMessage = validateTimelineEditDraft(
+      appointmentsWithDurations,
+      editingAppointmentId,
+      appointmentDraft,
+      currentAppointment?.durationMinutes ?? APPOINTMENT_DURATION_IN_MINUTES,
+    );
 
     if (validationMessage) {
       toast.error(validationMessage);
       return;
     }
 
-    const currentAppointment = findTimelineAppointment(appointments, editingAppointmentId);
 
     if (!currentAppointment) {
       toast.error("Agendamento não encontrado.");
@@ -506,7 +609,7 @@ export function AgendaTimeline() {
     const normalizedService = appointmentDraft.service.trim();
     const previousAppointments = appointments;
     const nextAppointments = applyTimelineEdit({
-      appointments,
+      appointments: appointmentsWithDurations,
       appointmentId: editingAppointmentId,
       draft: appointmentDraft,
       normalizedClient,
@@ -607,10 +710,31 @@ export function AgendaTimeline() {
               <Button variant="outline" size="icon" onClick={previousDay}>
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <Button variant="outline" onClick={today}>
-                <CalendarDays className="h-4 w-4" />
-                Hoje
-              </Button>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline">
+                    <CalendarDays className="h-4 w-4" />
+                    {toolbarDateLabel}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={(date) => {
+                      if (date) {
+                        setSelectedDate(date);
+                      }
+                    }}
+                    initialFocus
+                  />
+                  <div className="border-t px-3 py-3">
+                    <Button variant="outline" className="w-full" onClick={today}>
+                      Ir para hoje
+                    </Button>
+                  </div>
+                </PopoverContent>
+              </Popover>
               <Button variant="outline" size="icon" onClick={nextDay}>
                 <ChevronRight className="h-4 w-4" />
               </Button>
@@ -682,15 +806,19 @@ export function AgendaTimeline() {
         />
       </SectionCard>
       <AgendaAppointmentDialogs
+        availableCreateTimeSlots={availableCreateTimeSlots}
         appointmentDraft={appointmentDraft}
         clients={clients}
         editingAppointmentId={editingAppointmentId}
         isCreateDialogOpen={isCreateDialogOpen}
         newAppointmentDraft={newAppointmentDraft}
         professionals={professionals}
+        selectedDate={selectedDate}
         services={services}
+        setSelectedDate={setSelectedDate}
         setAppointmentDraft={setAppointmentDraft}
         setNewAppointmentDraft={setNewAppointmentDraft}
+        selectedCreateService={selectedCreateService}
         timeSlots={timeSlots}
         onCloseCreateDialog={resetCreateDialog}
         onCreateAppointment={handleCreateAppointment}

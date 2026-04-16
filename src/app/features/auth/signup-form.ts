@@ -51,13 +51,13 @@ export function validateSignupForm(formData: SignupFormData) {
   if (!normalizedCpf) {
     errors.cpf = "Informe seu CPF.";
   } else if (!validateCpf(normalizedCpf)) {
-    errors.cpf = "Digite um CPF valido.";
+    errors.cpf = "Digite um CPF válido.";
   }
 
   if (!formData.password.trim()) {
     errors.password = "Informe uma senha.";
   } else if (formData.password.length > FIELD_LIMITS.password) {
-    errors.password = `A senha deve ter no maximo ${FIELD_LIMITS.password} caracteres.`;
+    errors.password = `A senha deve ter no máximo ${FIELD_LIMITS.password} caracteres.`;
   }
 
   if (!formData.confirmPassword.trim()) {
@@ -93,29 +93,29 @@ export function mapSignupSuccessMessage(message: string) {
 export function mapSignupApiError(error: ApiErrorInput): SignupFormErrors {
   const message = getApiErrorMessage(error, "Não foi possível concluir o cadastro agora.");
 
-  if (isApiErrorWithStatus(error, 409) && message === "E-mail ja esta em uso.") {
+  if (isApiErrorWithStatus(error, 409) && message === "E-mail já está em uso.") {
     return {
-      email: "Este e-mail ja esta em uso.",
+      email: "Este e-mail já está em uso.",
       submit: "Use outro e-mail para continuar.",
     };
   }
 
-  if (isApiErrorWithStatus(error, 409) && message === "CPF ja esta em uso.") {
+  if (isApiErrorWithStatus(error, 409) && message === "CPF já está em uso.") {
     return {
-      cpf: "Este CPF ja esta em uso.",
+      cpf: "Este CPF já está em uso.",
       submit: "Revise o CPF informado para continuar.",
     };
   }
 
   switch (message) {
-    case "Formato de e-mail invalido.":
+    case "Formato de e-mail inválido.":
       return {
-        email: "Digite um e-mail valido.",
+        email: "Digite um e-mail válido.",
         submit: "Revise os campos destacados antes de continuar.",
       };
-    case "CPF invalido.":
+    case "CPF inválido.":
       return {
-        cpf: "Digite um CPF valido.",
+        cpf: "Digite um CPF válido.",
         submit: "Revise os campos destacados antes de continuar.",
       };
     default:

@@ -1,10 +1,12 @@
+import { describe, expect, test } from "vitest";
+
+import { ApiError } from "../../lib/api";
 import {
   createSignupPayload,
   mapSignupApiError,
   mapSignupSuccessMessage,
   validateSignupForm,
 } from "./signup-form";
-import { ApiError } from "../../lib/api";
 
 describe("signup form helpers", () => {
   test("returns field errors when required data is missing or invalid", () => {
@@ -19,7 +21,7 @@ describe("signup form helpers", () => {
     ).toEqual({
       name: "O nome precisa ter pelo menos 2 caracteres.",
       email: "Digite um e-mail valido.",
-      cpf: "Digite um CPF valido.",
+      cpf: "Digite um CPF válido.",
       password: "Informe uma senha.",
       confirmPassword: "As senhas precisam ser iguais.",
       submit: "Revise os campos destacados antes de continuar.",
@@ -51,23 +53,23 @@ describe("signup form helpers", () => {
     expect(
       mapSignupApiError({
         status: 409,
-        message: "E-mail ja esta em uso.",
+        message: "E-mail já está em uso.",
       } as never),
     ).toEqual({
       submit: "Não foi possível concluir o cadastro agora.",
     });
 
     expect(
-      mapSignupApiError(new ApiError("E-mail ja esta em uso.", 409)),
+      mapSignupApiError(new ApiError("E-mail já está em uso.", 409)),
     ).toEqual({
-      email: "Este e-mail ja esta em uso.",
+      email: "Este e-mail já está em uso.",
       submit: "Use outro e-mail para continuar.",
     });
 
     expect(
-      mapSignupApiError(new ApiError("CPF invalido.", 400)),
+      mapSignupApiError(new ApiError("CPF inválido.", 400)),
     ).toEqual({
-      cpf: "Digite um CPF valido.",
+      cpf: "Digite um CPF válido.",
       submit: "Revise os campos destacados antes de continuar.",
     });
   });

@@ -1,5 +1,16 @@
 import type { Dispatch, SetStateAction } from "react";
 
+import { formatPhone, normalizePhone } from "../../data/clients";
+import { formatCpf } from "../../lib/cpf";
+import {
+  FIELD_LIMITS,
+  normalizeEmailInput,
+  normalizeSingleLineTextInput,
+} from "../../lib/field-rules";
+import type { ClientApiItem } from "../../services/clients";
+import type { ProfessionalApiItem } from "../../services/professionals";
+import type { ServiceApiItem } from "../../services/services";
+import type { AppointmentStatus } from "../../types/entities";
 import { Button } from "../../components/ui/button";
 import {
   Dialog,
@@ -18,27 +29,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../components/ui/select";
-import type { ClientApiItem } from "../../services/clients";
-import type { ProfessionalApiItem } from "../../services/professionals";
-import type { ServiceApiItem } from "../../services/services";
-import type { AppointmentStatus } from "../../types/entities";
-import type { AppointmentDraft, NewAppointmentDraft } from "./timeline-helpers";
-import { formatCpf } from "../../lib/cpf";
 import {
-  FIELD_LIMITS,
-  normalizeEmailInput,
-  normalizeSingleLineTextInput,
-} from "../../lib/field-rules";
-import { formatPhone, normalizePhone } from "../../data/clients";
+  formatDateForApi,
+  parseDateInput,
+  type AppointmentDraft,
+  type NewAppointmentDraft,
+} from "./timeline-helpers";
 
 type AgendaAppointmentDialogsProps = {
+  availableCreateTimeSlots: string[];
   appointmentDraft: AppointmentDraft;
   clients: ClientApiItem[];
   editingAppointmentId: number | null;
   isCreateDialogOpen: boolean;
   newAppointmentDraft: NewAppointmentDraft;
   professionals: ProfessionalApiItem[];
+  selectedCreateService: ServiceApiItem | null;
+  selectedDate: Date;
   services: ServiceApiItem[];
+  setSelectedDate: Dispatch<SetStateAction<Date>>;
   setAppointmentDraft: Dispatch<SetStateAction<AppointmentDraft>>;
   setNewAppointmentDraft: Dispatch<SetStateAction<NewAppointmentDraft>>;
   timeSlots: string[];
@@ -50,13 +59,17 @@ type AgendaAppointmentDialogsProps = {
 };
 
 export function AgendaAppointmentDialogs({
+  availableCreateTimeSlots,
   appointmentDraft,
   clients,
   editingAppointmentId,
   isCreateDialogOpen,
   newAppointmentDraft,
   professionals,
+  selectedCreateService,
+  selectedDate,
   services,
+  setSelectedDate,
   setAppointmentDraft,
   setNewAppointmentDraft,
   timeSlots,
@@ -66,6 +79,27 @@ export function AgendaAppointmentDialogs({
   onResetEditDialog,
   onSaveAppointmentEdit,
 }: AgendaAppointmentDialogsProps) {
+  const canShowAvailableTimes = Boolean(newAppointmentDraft.professionalId && selectedCreateService);
+  const hasAvailableTimes = availableCreateTimeSlots.length > 0;
+
+  const applyExistingClientToDraft = (client: ClientApiItem) => {
+    setNewAppointmentDraft((currentDraft) => ({
+      ...currentDraft,
+      clientId: String(client.id),
+      clientName: client.name,
+      clientEmail: client.email,
+      clientPhone: normalizePhone(client.phone),
+      clientCpf: formatCpf(client.cpf ?? ""),
+    }));
+  };
+
+  const clearSelectedClient = () => {
+    setNewAppointmentDraft((currentDraft) => ({
+      ...currentDraft,
+      clientId: "",
+    }));
+  };
+
   return (
     <>
       <Dialog
@@ -83,24 +117,67 @@ export function AgendaAppointmentDialogs({
           <DialogHeader>
             <DialogTitle>Novo agendamento</DialogTitle>
             <DialogDescription>
-              Selecione cliente, serviço, profissional e horário para lançar um novo atendimento.
+              Escolha cliente, servico, profissional e horario para criar o atendimento.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="timeline-new-client">Cliente</Label>
-              <Select
-                value={newAppointmentDraft.clientId}
-                onValueChange={(value) =>
+              <Label htmlFor="timeline-new-client-name">Cliente</Label>
+              <Input
+                id="timeline-new-client-name"
+                list="timeline-client-suggestions"
+                value={newAppointmentDraft.clientName}
+                onChange={(event) => {
+                  const typedName = normalizeSingleLineTextInput(event.target.value, FIELD_LIMITS.clientName);
+                  const matchedClient = clients.find(
+                    (client) => client.name.trim().toLowerCase() === typedName.trim().toLowerCase(),
+                  );
+
+                  if (matchedClient) {
+                    applyExistingClientToDraft(matchedClient);
+                    return;
+                  }
+
                   setNewAppointmentDraft((currentDraft) => ({
                     ...currentDraft,
-                    clientId: value,
-                  }))
-                }
+                    clientName: typedName,
+                  }));
+                  clearSelectedClient();
+                }}
+                placeholder="Digite o nome do cliente"
+                maxLength={FIELD_LIMITS.clientName}
+              />
+              <datalist id="timeline-client-suggestions">
+                {clients.map((client) => (
+                  <option key={client.id} value={client.name} />
+                ))}
+              </datalist>
+              <p className="text-xs text-muted-foreground">
+                Se o nome bater com um cliente ja cadastrado, os dados serao preenchidos automaticamente.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="timeline-new-client">Selecionar cliente cadastrado</Label>
+              <Select
+                value={newAppointmentDraft.clientId}
+                onValueChange={(value) => {
+                  const selectedClient = clients.find((client) => String(client.id) === value);
+
+                  if (!selectedClient) {
+                    setNewAppointmentDraft((currentDraft) => ({
+                      ...currentDraft,
+                      clientId: value,
+                    }));
+                    return;
+                  }
+
+                  applyExistingClientToDraft(selectedClient);
+                }}
               >
                 <SelectTrigger id="timeline-new-client">
-                  <SelectValue placeholder="Escolha o cliente" />
+                  <SelectValue placeholder="Escolha um cliente da lista" />
                 </SelectTrigger>
                 <SelectContent>
                   {clients.map((client) => (
@@ -116,14 +193,14 @@ export function AgendaAppointmentDialogs({
               <div>
                 <p className="text-sm font-semibold text-foreground">Dados opcionais do cliente</p>
                 <p className="text-xs text-muted-foreground">
-                  Se não escolher um cliente existente, preencha nome, e-mail e telefone do novo cadastro.
+                  Para novo cliente, basta o nome. Os demais campos podem ficar em branco.
                 </p>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-2 sm:col-span-2">
-                  <Label htmlFor="timeline-new-client-name">Nome</Label>
+                  <Label htmlFor="timeline-new-client-name-readonly">Nome</Label>
                   <Input
-                    id="timeline-new-client-name"
+                    id="timeline-new-client-name-readonly"
                     value={newAppointmentDraft.clientName}
                     onChange={(event) =>
                       setNewAppointmentDraft((currentDraft) => ({
@@ -187,7 +264,52 @@ export function AgendaAppointmentDialogs({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="timeline-new-service">Serviço</Label>
+              <Label htmlFor="timeline-new-professional">Profissional</Label>
+              <Select
+                value={newAppointmentDraft.professionalId}
+                onValueChange={(value) =>
+                  setNewAppointmentDraft((currentDraft) => ({
+                    ...currentDraft,
+                    professionalId: value,
+                  }))
+                }
+              >
+                <SelectTrigger id="timeline-new-professional">
+                  <SelectValue placeholder="Escolha primeiro o profissional" />
+                </SelectTrigger>
+                <SelectContent>
+                  {professionals.map((professional) => (
+                    <SelectItem key={professional.id} value={String(professional.id)}>
+                      {professional.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="timeline-new-date">Data</Label>
+              <Input
+                id="timeline-new-date"
+                type="date"
+                value={formatDateForApi(selectedDate)}
+                onChange={(event) => {
+                  const parsedDate = parseDateInput(event.target.value);
+
+                  if (!parsedDate) {
+                    return;
+                  }
+
+                  setSelectedDate(parsedDate);
+                }}
+              />
+              <p className="text-xs text-muted-foreground">
+                Escolha o dia do atendimento. Depois disso, os horarios livres sao atualizados.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="timeline-new-service">Servico</Label>
               <Select
                 value={newAppointmentDraft.serviceId}
                 onValueChange={(value) =>
@@ -198,7 +320,7 @@ export function AgendaAppointmentDialogs({
                 }
               >
                 <SelectTrigger id="timeline-new-service">
-                  <SelectValue placeholder="Escolha o serviço" />
+                  <SelectValue placeholder="Escolha o servico" />
                 </SelectTrigger>
                 <SelectContent>
                   {services.map((service) => (
@@ -210,54 +332,44 @@ export function AgendaAppointmentDialogs({
               </Select>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="timeline-new-time">Horário</Label>
-                <Select
-                  value={newAppointmentDraft.time}
-                  onValueChange={(value) =>
-                    setNewAppointmentDraft((currentDraft) => ({
-                      ...currentDraft,
-                      time: value,
-                    }))
-                  }
-                >
-                  <SelectTrigger id="timeline-new-time">
-                    <SelectValue placeholder="Escolha o horário" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {timeSlots.map((time) => (
-                      <SelectItem key={time} value={time}>
-                        {time}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="timeline-new-professional">Profissional</Label>
-                <Select
-                  value={newAppointmentDraft.professionalId}
-                  onValueChange={(value) =>
-                    setNewAppointmentDraft((currentDraft) => ({
-                      ...currentDraft,
-                      professionalId: value,
-                    }))
-                  }
-                >
-                  <SelectTrigger id="timeline-new-professional">
-                    <SelectValue placeholder="Escolha o profissional" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {professionals.map((professional) => (
-                      <SelectItem key={professional.id} value={String(professional.id)}>
-                        {professional.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="timeline-new-time">Horario</Label>
+              <Select
+                value={newAppointmentDraft.time}
+                disabled={!canShowAvailableTimes || !hasAvailableTimes}
+                onValueChange={(value) =>
+                  setNewAppointmentDraft((currentDraft) => ({
+                    ...currentDraft,
+                    time: value,
+                  }))
+                }
+              >
+                <SelectTrigger id="timeline-new-time">
+                  <SelectValue
+                    placeholder={
+                      !canShowAvailableTimes
+                        ? "Escolha o profissional, a data e o servico"
+                        : hasAvailableTimes
+                          ? "Escolha o horario"
+                          : "Sem horarios livres"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableCreateTimeSlots.map((time) => (
+                    <SelectItem key={time} value={time}>
+                      {time}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                {!canShowAvailableTimes
+                  ? "Defina primeiro o profissional e o servico para carregar os horarios disponiveis."
+                  : hasAvailableTimes
+                    ? `Mostrando apenas horarios livres para ${selectedCreateService?.durationMinutes} min.`
+                    : "Nao ha mais horario disponivel nesse dia para esse profissional."}
+              </p>
             </div>
 
             <div className="space-y-2">
@@ -287,7 +399,9 @@ export function AgendaAppointmentDialogs({
             <Button variant="outline" onClick={onCloseCreateDialog}>
               Cancelar
             </Button>
-            <Button onClick={onCreateAppointment}>Criar agendamento</Button>
+            <Button onClick={onCreateAppointment} disabled={canShowAvailableTimes && !hasAvailableTimes}>
+              Criar agendamento
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -297,34 +411,24 @@ export function AgendaAppointmentDialogs({
           <DialogHeader>
             <DialogTitle>Editar agendamento</DialogTitle>
             <DialogDescription>
-              Ajuste cliente, serviço, horário, profissional e status sem sair da timeline.
+              Ajuste cliente, servico, horario, profissional e status sem sair da timeline.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="timeline-client">Cliente</Label>
-              <Input
-                id="timeline-client"
-                value={appointmentDraft.client}
-                placeholder="Nome do cliente"
-                readOnly
-              />
+              <Input id="timeline-client" value={appointmentDraft.client} placeholder="Nome do cliente" readOnly />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="timeline-service">Serviço</Label>
-              <Input
-                id="timeline-service"
-                value={appointmentDraft.service}
-                placeholder="Serviço agendado"
-                readOnly
-              />
+              <Label htmlFor="timeline-service">Servico</Label>
+              <Input id="timeline-service" value={appointmentDraft.service} placeholder="Servico agendado" readOnly />
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="timeline-time">Horário</Label>
+                <Label htmlFor="timeline-time">Horario</Label>
                 <Select
                   value={appointmentDraft.time}
                   onValueChange={(value) =>
@@ -335,7 +439,7 @@ export function AgendaAppointmentDialogs({
                   }
                 >
                   <SelectTrigger id="timeline-time">
-                    <SelectValue placeholder="Escolha o horário" />
+                    <SelectValue placeholder="Escolha o horario" />
                   </SelectTrigger>
                   <SelectContent>
                     {timeSlots.map((time) => (
@@ -399,7 +503,7 @@ export function AgendaAppointmentDialogs({
             <Button variant="outline" onClick={onResetEditDialog}>
               Cancelar
             </Button>
-            <Button onClick={onSaveAppointmentEdit}>Salvar alterações</Button>
+            <Button onClick={onSaveAppointmentEdit}>Salvar alteracoes</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
