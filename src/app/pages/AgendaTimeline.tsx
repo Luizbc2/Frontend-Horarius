@@ -25,18 +25,31 @@ import {
 import { AgendaAppointmentDialogs } from "../features/agenda/AgendaAppointmentDialogs";
 import { AgendaTimelineBoard } from "../features/agenda/AgendaTimelineBoard";
 import {
-  buildScheduledAt,
   createAppointmentDraft,
   createNewAppointmentDraft,
   formatDateForApi,
   generateTimeSlots,
   mapTimelineAppointment,
   SLOT_HEIGHT,
-  timeToMinutes,
   type AppointmentDraft,
   type NewAppointmentDraft,
   type TimelineAppointment,
 } from "../features/agenda/timeline-helpers";
+import {
+  applyTimelineEdit,
+  buildCreateAppointmentPayload,
+  buildCreateClientPayload,
+  buildTimelineEditPayload,
+  buildTimelineUpdatePayload,
+  createTimelineEditDraft,
+  findTimelineAppointment,
+  findTimelineTargetAppointment,
+  hasTimelineOverlap,
+  moveTimelineAppointment,
+  swapTimelineAppointments,
+  validateTimelineCreateDraft,
+  validateTimelineEditDraft,
+} from "../features/agenda/timeline-operations";
 import { getApiErrorMessage, isMissingAuthTokenError } from "../lib/api-error";
 import { createProfessionalsService, type ProfessionalApiItem } from "../services/professionals";
 import { createAppointmentsService } from "../services/appointments";
@@ -321,48 +334,23 @@ export function AgendaTimeline() {
       return;
     }
 
-    let clientId = Number(newAppointmentDraft.clientId);
-    const serviceId = Number(newAppointmentDraft.serviceId);
-    const professionalId = Number(newAppointmentDraft.professionalId);
+    const validationMessage = validateTimelineCreateDraft(newAppointmentDraft, appointments);
 
-    if (!serviceId || !professionalId) {
-      toast.error("Selecione servico e profissional.");
-      return;
-    }
-
-    if (!clientId) {
-      if (!newAppointmentDraft.clientName.trim()) {
-        toast.error("Informe o nome do cliente ou selecione um cliente existente.");
-        return;
-      }
-    }
-
-    const conflict = appointments.find(
-      (appointment) =>
-        appointment.professionalId === String(professionalId) &&
-        appointment.time === newAppointmentDraft.time,
-    );
-
-    if (conflict) {
-      toast.error("Ja existe um agendamento nesse horario.");
+    if (validationMessage) {
+      toast.error(validationMessage);
       return;
     }
 
     const appointmentsService = createAppointmentsService(token);
     const clientsService = createClientsService(token);
+    let clientId = Number(newAppointmentDraft.clientId);
 
     const resolveClientId = async () => {
       if (clientId) {
         return clientId;
       }
 
-      const createdClient = await clientsService.create({
-        name: newAppointmentDraft.clientName.trim(),
-        email: newAppointmentDraft.clientEmail.trim(),
-        phone: newAppointmentDraft.clientPhone.trim(),
-        cpf: newAppointmentDraft.clientCpf.trim(),
-        notes: "",
-      });
+      const createdClient = await clientsService.create(buildCreateClientPayload(newAppointmentDraft));
 
       clientId = createdClient.client.id;
       setClients((currentClients) => [...currentClients, createdClient.client]);
@@ -372,14 +360,7 @@ export function AgendaTimeline() {
 
     void resolveClientId()
       .then((resolvedClientId) =>
-        appointmentsService.create({
-          clientId: resolvedClientId,
-          professionalId,
-          serviceId,
-          scheduledAt: buildScheduledAt(selectedDate, newAppointmentDraft.time),
-          status: newAppointmentDraft.status,
-          notes: "",
-        }),
+        appointmentsService.create(buildCreateAppointmentPayload(resolvedClientId, newAppointmentDraft, selectedDate)),
       )
       .then((response) => {
         setAppointments((currentAppointments) => [
@@ -396,13 +377,7 @@ export function AgendaTimeline() {
 
   const openEditDialog = (appointment: TimelineAppointment) => {
     setEditingAppointmentId(appointment.id);
-    setAppointmentDraft({
-      client: appointment.client,
-      service: appointment.service,
-      time: appointment.time,
-      professionalId: appointment.professionalId,
-      status: appointment.status,
-    });
+    setAppointmentDraft(createTimelineEditDraft(appointment));
   };
 
   const handleDeleteAppointment = (appointmentId: number) => {
@@ -438,7 +413,8 @@ export function AgendaTimeline() {
       return;
     }
 
-    const draggedAppointment = appointments.find((appointment) => appointment.id === draggedAppointmentId);
+    const slot = { professionalId, time };
+    const draggedAppointment = findTimelineAppointment(appointments, draggedAppointmentId);
 
     if (!draggedAppointment) {
       setDraggedAppointmentId(null);
@@ -446,56 +422,25 @@ export function AgendaTimeline() {
       return;
     }
 
-    const targetAppointment = appointments.find(
-      (appointment) =>
-        appointment.id !== draggedAppointmentId &&
-        appointment.professionalId === professionalId &&
-        appointment.time === time,
-    );
+    const targetAppointment = findTimelineTargetAppointment(appointments, draggedAppointmentId, slot);
 
     if (targetAppointment) {
       const previousAppointments = appointments;
-      const nextAppointments = appointments.map((appointment) => {
-        if (appointment.id === draggedAppointmentId) {
-          return {
-            ...appointment,
-            professionalId: targetAppointment.professionalId,
-            time: targetAppointment.time,
-          };
-        }
-
-        if (appointment.id === targetAppointment.id) {
-          return {
-            ...appointment,
-            professionalId: draggedAppointment.professionalId,
-            time: draggedAppointment.time,
-          };
-        }
-
-        return appointment;
-      });
+      const nextAppointments = swapTimelineAppointments(appointments, draggedAppointment, targetAppointment);
 
       setAppointments(nextAppointments);
 
       const appointmentsService = createAppointmentsService(token);
 
       void Promise.all([
-        appointmentsService.update(draggedAppointment.id, {
-          clientId: draggedAppointment.clientId,
-          professionalId: Number(targetAppointment.professionalId),
-          serviceId: draggedAppointment.serviceId,
-          scheduledAt: buildScheduledAt(selectedDate, targetAppointment.time),
-          status: draggedAppointment.status,
-          notes: draggedAppointment.notes,
-        }),
-        appointmentsService.update(targetAppointment.id, {
-          clientId: targetAppointment.clientId,
-          professionalId: Number(draggedAppointment.professionalId),
-          serviceId: targetAppointment.serviceId,
-          scheduledAt: buildScheduledAt(selectedDate, draggedAppointment.time),
-          status: targetAppointment.status,
-          notes: targetAppointment.notes,
-        }),
+        appointmentsService.update(
+          draggedAppointment.id,
+          buildTimelineUpdatePayload(draggedAppointment, targetAppointment, selectedDate),
+        ),
+        appointmentsService.update(
+          targetAppointment.id,
+          buildTimelineUpdatePayload(targetAppointment, draggedAppointment, selectedDate),
+        ),
       ]).catch((error) => {
         setAppointments(previousAppointments);
         toast.error(getApiErrorMessage(error, "Nao foi possivel trocar os agendamentos."));
@@ -506,18 +451,7 @@ export function AgendaTimeline() {
       return;
     }
 
-    const targetStart = timeToMinutes(time);
-    const targetEnd = targetStart + APPOINTMENT_DURATION_IN_MINUTES;
-    const hasConflict = appointments.some((appointment) => {
-      if (appointment.id === draggedAppointmentId || appointment.professionalId !== professionalId) {
-        return false;
-      }
-
-      const appointmentStart = timeToMinutes(appointment.time);
-      const appointmentEnd = appointmentStart + APPOINTMENT_DURATION_IN_MINUTES;
-
-      return targetStart < appointmentEnd && targetEnd > appointmentStart;
-    });
+    const hasConflict = hasTimelineOverlap(appointments, draggedAppointmentId, slot);
 
     if (hasConflict) {
       toast.error("Esse horario ja esta ocupado para esse profissional.");
@@ -527,29 +461,14 @@ export function AgendaTimeline() {
     }
 
     const previousAppointments = appointments;
-    const nextAppointments = appointments.map((appointment) =>
-      appointment.id === draggedAppointmentId
-        ? {
-            ...appointment,
-            professionalId,
-            time,
-          }
-        : appointment,
-    );
+    const nextAppointments = moveTimelineAppointment(appointments, draggedAppointmentId, slot);
 
     setAppointments(nextAppointments);
 
     const appointmentsService = createAppointmentsService(token);
 
     void appointmentsService
-      .update(draggedAppointment.id, {
-        clientId: draggedAppointment.clientId,
-        professionalId: Number(professionalId),
-        serviceId: draggedAppointment.serviceId,
-        scheduledAt: buildScheduledAt(selectedDate, time),
-        status: draggedAppointment.status,
-        notes: draggedAppointment.notes,
-      })
+      .update(draggedAppointment.id, buildTimelineUpdatePayload(draggedAppointment, slot, selectedDate))
       .catch((error) => {
         setAppointments(previousAppointments);
         toast.error(getApiErrorMessage(error, "Nao foi possivel mover o agendamento."));
@@ -569,46 +488,30 @@ export function AgendaTimeline() {
       return;
     }
 
-    const normalizedClient = appointmentDraft.client.trim();
-    const normalizedService = appointmentDraft.service.trim();
+    const validationMessage = validateTimelineEditDraft(appointments, editingAppointmentId, appointmentDraft);
 
-    if (!normalizedClient || !normalizedService) {
-      toast.error("Preencha cliente e servico.");
+    if (validationMessage) {
+      toast.error(validationMessage);
       return;
     }
 
-    const conflict = appointments.find(
-      (appointment) =>
-        appointment.id !== editingAppointmentId &&
-        appointment.professionalId === appointmentDraft.professionalId &&
-        appointment.time === appointmentDraft.time,
-    );
-
-    if (conflict) {
-      toast.error("Ja existe um agendamento nesse horario.");
-      return;
-    }
-
-    const currentAppointment = appointments.find((appointment) => appointment.id === editingAppointmentId);
+    const currentAppointment = findTimelineAppointment(appointments, editingAppointmentId);
 
     if (!currentAppointment) {
       toast.error("Agendamento nao encontrado.");
       return;
     }
 
+    const normalizedClient = appointmentDraft.client.trim();
+    const normalizedService = appointmentDraft.service.trim();
     const previousAppointments = appointments;
-    const nextAppointments = appointments.map((appointment) =>
-      appointment.id === editingAppointmentId
-        ? {
-            ...appointment,
-            client: normalizedClient,
-            service: normalizedService,
-            time: appointmentDraft.time,
-            professionalId: appointmentDraft.professionalId,
-            status: appointmentDraft.status,
-          }
-        : appointment,
-    );
+    const nextAppointments = applyTimelineEdit({
+      appointments,
+      appointmentId: editingAppointmentId,
+      draft: appointmentDraft,
+      normalizedClient,
+      normalizedService,
+    });
 
     setAppointments(nextAppointments);
     resetEditDialog();
@@ -616,14 +519,7 @@ export function AgendaTimeline() {
     const appointmentsService = createAppointmentsService(token);
 
     void appointmentsService
-      .update(editingAppointmentId, {
-        clientId: currentAppointment.clientId,
-        professionalId: Number(appointmentDraft.professionalId),
-        serviceId: currentAppointment.serviceId,
-        scheduledAt: buildScheduledAt(selectedDate, appointmentDraft.time),
-        status: appointmentDraft.status,
-        notes: currentAppointment.notes,
-      })
+      .update(editingAppointmentId, buildTimelineEditPayload(currentAppointment, appointmentDraft, selectedDate))
       .then((response) => {
         setAppointments((currentAppointments) =>
           currentAppointments.map((appointment) =>
