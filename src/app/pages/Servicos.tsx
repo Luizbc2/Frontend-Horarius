@@ -11,12 +11,17 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { formatCurrency } from "../data/services";
 import { getApiErrorMessage } from "../lib/api-error";
+import { getNextPageAfterDelete } from "../lib/pagination";
+import { clearRouteNotice, readRouteNotice } from "../lib/route-notice";
 import { createServicesService, type ServiceApiItem } from "../services/services";
 
 const ITEMS_PER_PAGE = 6;
 
-type LocationState = {
-  notice?: string;
+type LoadServicesRequest = {
+  authToken: string;
+  page: number;
+  search: string;
+  silent?: boolean;
 };
 
 export function Servicos() {
@@ -30,15 +35,10 @@ export function Servicos() {
   const [pageSize, setPageSize] = useState(ITEMS_PER_PAGE);
   const [isLoading, setIsLoading] = useState(true);
 
-  const loadServicesFromApi = async (
-    authToken: string,
-    page: number,
-    search: string,
-    options?: { silent?: boolean },
-  ) => {
+  const loadServicesFromApi = async ({ authToken, page, search, silent }: LoadServicesRequest) => {
     const servicesService = createServicesService(authToken);
 
-    if (!options?.silent) {
+    if (!silent) {
       setIsLoading(true);
     }
 
@@ -55,20 +55,18 @@ export function Servicos() {
       setTotalItems(response.totalItems);
       setTotalPages(response.totalPages);
     } finally {
-      if (!options?.silent) {
+      if (!silent) {
         setIsLoading(false);
       }
     }
   };
 
   useEffect(() => {
-    if (typeof location.state === "object" && location.state !== null && "notice" in location.state) {
-      const state = location.state as LocationState;
+    const notice = readRouteNotice(location.state);
 
-      if (state.notice) {
-        toast.success(state.notice);
-        window.history.replaceState({}, document.title);
-      }
+    if (notice) {
+      toast.success(notice);
+      clearRouteNotice();
     }
   }, [location.state]);
 
@@ -89,7 +87,11 @@ export function Servicos() {
 
     const loadCurrentPage = async () => {
       try {
-        await loadServicesFromApi(token, currentPage, searchTerm);
+        await loadServicesFromApi({
+          authToken: token,
+          page: currentPage,
+          search: searchTerm,
+        });
 
         if (!isMounted) {
           return;
@@ -134,16 +136,23 @@ export function Servicos() {
       const response = await servicesService.remove(serviceId);
       toast.success(response.message);
 
-      const nextTotalItems = Math.max(0, totalItems - 1);
-      const nextTotalPages = Math.max(1, Math.ceil(nextTotalItems / ITEMS_PER_PAGE));
-      const nextPage = Math.min(currentPage, nextTotalPages);
+      const { nextPage } = getNextPageAfterDelete({
+        currentPage,
+        itemsPerPage: ITEMS_PER_PAGE,
+        totalItems,
+      });
 
       if (nextPage !== currentPage) {
         setCurrentPage(nextPage);
         return;
       }
 
-      await loadServicesFromApi(token, nextPage, searchTerm, { silent: true });
+      await loadServicesFromApi({
+        authToken: token,
+        page: nextPage,
+        search: searchTerm,
+        silent: true,
+      });
     } catch (error) {
       toast.error(getApiErrorMessage(error, "Nao foi possivel excluir o servico."));
     }

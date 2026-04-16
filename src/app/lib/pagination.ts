@@ -1,17 +1,26 @@
-export type PaginationResult<T> = {
-  totalPages: number;
-  safePage: number;
-  paginatedItems: T[];
+export type DeletePaginationState = {
+  currentPage: number;
+  itemsPerPage: number;
+  totalItems: number;
 };
 
-export function paginateItems<T>(items: T[], currentPage: number, itemsPerPage: number): PaginationResult<T> {
-  const totalPages = Math.max(1, Math.ceil(items.length / itemsPerPage));
-  const safePage = Math.min(Math.max(1, currentPage), totalPages);
-  const startIndex = (safePage - 1) * itemsPerPage;
+export type NextPageState = {
+  nextPage: number;
+  nextTotalItems: number;
+  nextTotalPages: number;
+};
+
+export function getNextPageAfterDelete({
+  currentPage,
+  itemsPerPage,
+  totalItems,
+}: DeletePaginationState): NextPageState {
+  const nextTotalItems = Math.max(0, totalItems - 1);
+  const nextTotalPages = Math.max(1, Math.ceil(nextTotalItems / itemsPerPage));
 
   return {
-    totalPages,
-    safePage,
-    paginatedItems: items.slice(startIndex, startIndex + itemsPerPage),
+    nextPage: Math.min(currentPage, nextTotalPages),
+    nextTotalItems,
+    nextTotalPages,
   };
 }

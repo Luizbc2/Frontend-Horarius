@@ -10,12 +10,17 @@ import { EmptyStatePanel, MetricCard, PageShell, SectionCard } from "../componen
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { getApiErrorMessage } from "../lib/api-error";
+import { getNextPageAfterDelete } from "../lib/pagination";
+import { clearRouteNotice, readRouteNotice } from "../lib/route-notice";
 import { createClientsService, type ClientApiItem } from "../services/clients";
 
 const ITEMS_PER_PAGE = 6;
 
-type LocationState = {
-  notice?: string;
+type LoadClientsRequest = {
+  authToken: string;
+  page: number;
+  search: string;
+  silent?: boolean;
 };
 
 export function Clientes() {
@@ -29,15 +34,10 @@ export function Clientes() {
   const [pageSize, setPageSize] = useState(ITEMS_PER_PAGE);
   const [isLoading, setIsLoading] = useState(true);
 
-  const loadClientsFromApi = async (
-    authToken: string,
-    page: number,
-    search: string,
-    options?: { silent?: boolean },
-  ) => {
+  const loadClientsFromApi = async ({ authToken, page, search, silent }: LoadClientsRequest) => {
     const clientsService = createClientsService(authToken);
 
-    if (!options?.silent) {
+    if (!silent) {
       setIsLoading(true);
     }
 
@@ -54,20 +54,18 @@ export function Clientes() {
       setTotalItems(response.totalItems);
       setTotalPages(response.totalPages);
     } finally {
-      if (!options?.silent) {
+      if (!silent) {
         setIsLoading(false);
       }
     }
   };
 
   useEffect(() => {
-    if (typeof location.state === "object" && location.state !== null && "notice" in location.state) {
-      const state = location.state as LocationState;
+    const notice = readRouteNotice(location.state);
 
-      if (state.notice) {
-        toast.success(state.notice);
-        window.history.replaceState({}, document.title);
-      }
+    if (notice) {
+      toast.success(notice);
+      clearRouteNotice();
     }
   }, [location.state]);
 
@@ -88,7 +86,11 @@ export function Clientes() {
 
     const loadCurrentPage = async () => {
       try {
-        await loadClientsFromApi(token, currentPage, searchTerm);
+        await loadClientsFromApi({
+          authToken: token,
+          page: currentPage,
+          search: searchTerm,
+        });
 
         if (!isMounted) {
           return;
@@ -128,16 +130,23 @@ export function Clientes() {
       const response = await clientsService.remove(clientId);
       toast.success(response.message);
 
-      const nextTotalItems = Math.max(0, totalItems - 1);
-      const nextTotalPages = Math.max(1, Math.ceil(nextTotalItems / ITEMS_PER_PAGE));
-      const nextPage = Math.min(currentPage, nextTotalPages);
+      const { nextPage } = getNextPageAfterDelete({
+        currentPage,
+        itemsPerPage: ITEMS_PER_PAGE,
+        totalItems,
+      });
 
       if (nextPage !== currentPage) {
         setCurrentPage(nextPage);
         return;
       }
 
-      await loadClientsFromApi(token, nextPage, searchTerm, { silent: true });
+      await loadClientsFromApi({
+        authToken: token,
+        page: nextPage,
+        search: searchTerm,
+        silent: true,
+      });
     } catch (error) {
       toast.error(getApiErrorMessage(error, "Nao foi possivel excluir o cliente."));
     }

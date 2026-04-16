@@ -15,12 +15,17 @@ import {
   type Professional,
 } from "../data/professionals";
 import { getApiErrorMessage } from "../lib/api-error";
+import { getNextPageAfterDelete } from "../lib/pagination";
+import { clearRouteNotice, readRouteNotice } from "../lib/route-notice";
 import { createProfessionalsService } from "../services/professionals";
 
 const ITEMS_PER_PAGE = 6;
 
-type LocationState = {
-  notice?: string;
+type LoadProfessionalsRequest = {
+  authToken: string;
+  page: number;
+  search: string;
+  silent?: boolean;
 };
 
 export function Profissionais() {
@@ -34,15 +39,15 @@ export function Profissionais() {
   const [pageSize, setPageSize] = useState(ITEMS_PER_PAGE);
   const [isLoading, setIsLoading] = useState(true);
 
-  const loadProfessionalsFromApi = async (
-    authToken: string,
-    page: number,
-    search: string,
-    options?: { silent?: boolean },
-  ) => {
+  const loadProfessionalsFromApi = async ({
+    authToken,
+    page,
+    search,
+    silent,
+  }: LoadProfessionalsRequest) => {
     const professionalsService = createProfessionalsService(authToken);
 
-    if (!options?.silent) {
+    if (!silent) {
       setIsLoading(true);
     }
 
@@ -61,20 +66,18 @@ export function Profissionais() {
       setTotalItems(response.totalItems);
       setTotalPages(response.totalPages);
     } finally {
-      if (!options?.silent) {
+      if (!silent) {
         setIsLoading(false);
       }
     }
   };
 
   useEffect(() => {
-    if (typeof location.state === "object" && location.state !== null && "notice" in location.state) {
-      const state = location.state as LocationState;
+    const notice = readRouteNotice(location.state);
 
-      if (state.notice) {
-        toast.success(state.notice);
-        window.history.replaceState({}, document.title);
-      }
+    if (notice) {
+      toast.success(notice);
+      clearRouteNotice();
     }
   }, [location.state]);
 
@@ -95,7 +98,11 @@ export function Profissionais() {
 
     const loadCurrentPage = async () => {
       try {
-        await loadProfessionalsFromApi(token, currentPage, searchTerm);
+        await loadProfessionalsFromApi({
+          authToken: token,
+          page: currentPage,
+          search: searchTerm,
+        });
 
         if (!isMounted) {
           return;
@@ -135,16 +142,23 @@ export function Profissionais() {
       const response = await professionalsService.remove(professionalId);
       toast.success(response.message);
 
-      const nextTotalItems = Math.max(0, totalItems - 1);
-      const nextTotalPages = Math.max(1, Math.ceil(nextTotalItems / ITEMS_PER_PAGE));
-      const nextPage = Math.min(currentPage, nextTotalPages);
+      const { nextPage } = getNextPageAfterDelete({
+        currentPage,
+        itemsPerPage: ITEMS_PER_PAGE,
+        totalItems,
+      });
 
       if (nextPage !== currentPage) {
         setCurrentPage(nextPage);
         return;
       }
 
-      await loadProfessionalsFromApi(token, nextPage, searchTerm, { silent: true });
+      await loadProfessionalsFromApi({
+        authToken: token,
+        page: nextPage,
+        search: searchTerm,
+        silent: true,
+      });
     } catch (error) {
       toast.error(getApiErrorMessage(error, "Nao foi possivel excluir o profissional."));
     }
