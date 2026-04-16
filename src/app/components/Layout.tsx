@@ -4,12 +4,10 @@ import {
   CalendarDays,
   ChevronDown,
   Clock3,
-  CreditCard,
   List,
   LogOut,
   Menu,
   Package,
-  PanelsTopLeft,
   Plus,
   Scissors,
   Sparkles,
@@ -46,13 +44,6 @@ const navigationGroups: Array<{ title: string; items: NavigationItem[] }> = [
       { label: "Profissionais", path: "/profissionais", icon: Scissors },
       { label: "Servicos", path: "/servicos", icon: Package },
       { label: "Em breve", icon: Sparkles, badge: "soon", disabled: true },
-    ],
-  },
-  {
-    title: "Crescimento",
-    items: [
-      { label: "Planos clientes", path: "/planos-clientes", icon: PanelsTopLeft },
-      { label: "Assinatura", path: "/assinatura", icon: CreditCard },
     ],
   },
   {

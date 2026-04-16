@@ -23,10 +23,6 @@ const Servicos = lazy(() => import("./pages/Servicos").then((module) => ({ defau
 const ServicoFormulario = lazy(() =>
   import("./pages/ServicoFormulario").then((module) => ({ default: module.ServicoFormulario })),
 );
-const PlanosClientes = lazy(() =>
-  import("./pages/PlanosClientes").then((module) => ({ default: module.PlanosClientes })),
-);
-const Assinatura = lazy(() => import("./pages/Assinatura").then((module) => ({ default: module.Assinatura })));
 const Perfil = lazy(() => import("./pages/Perfil").then((module) => ({ default: module.Perfil })));
 const CadastroUsuario = lazy(() =>
   import("./pages/CadastroUsuario").then((module) => ({ default: module.CadastroUsuario })),
@@ -102,8 +98,6 @@ export const appRoutes: RouteObject[] = [
       { path: "servicos", Component: Servicos },
       { path: "servicos/novo", Component: ServicoFormulario },
       { path: "servicos/:serviceId/editar", Component: ServicoFormulario },
-      { path: "planos-clientes", Component: PlanosClientes },
-      { path: "assinatura", Component: Assinatura },
       { path: "perfil", Component: Perfil },
     ],
   },
