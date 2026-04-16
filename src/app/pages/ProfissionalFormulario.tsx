@@ -14,8 +14,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../components/ui/select";
-import { formatPhone, normalizePhone } from "../data/clients";
+import { formatPhone } from "../data/clients";
 import {
+  normalizeProfessionalField,
   updateProfessional,
   validateProfessionalForm,
   type Professional,
@@ -23,6 +24,7 @@ import {
   type ProfessionalFormErrors,
 } from "../data/professionals";
 import { getApiErrorMessage } from "../lib/api-error";
+import { FIELD_LIMITS } from "../lib/field-rules";
 import { createProfessionalsService, type ProfessionalApiItem } from "../services/professionals";
 
 const initialFormData: ProfessionalFormData = {
@@ -114,7 +116,7 @@ export function ProfissionalFormulario() {
   const handleChange = (field: keyof ProfessionalFormData, value: string) => {
     setFormData((currentData) => ({
       ...currentData,
-      [field]: field === "phone" ? normalizePhone(value) : value,
+      [field]: normalizeProfessionalField(field, value),
     }));
 
     setFormErrors((currentErrors) => ({
@@ -240,6 +242,7 @@ export function ProfissionalFormulario() {
                 value={formData.name}
                 onChange={(event) => handleChange("name", event.target.value)}
                 aria-invalid={Boolean(formErrors.name)}
+                maxLength={FIELD_LIMITS.professionalName}
               />
               {formErrors.name ? <p className="text-sm text-destructive">{formErrors.name}</p> : null}
             </div>
@@ -252,6 +255,7 @@ export function ProfissionalFormulario() {
                 value={formData.email}
                 onChange={(event) => handleChange("email", event.target.value)}
                 aria-invalid={Boolean(formErrors.email)}
+                maxLength={FIELD_LIMITS.email}
               />
               {formErrors.email ? <p className="text-sm text-destructive">{formErrors.email}</p> : null}
             </div>
@@ -264,6 +268,7 @@ export function ProfissionalFormulario() {
                 onChange={(event) => handleChange("phone", event.target.value)}
                 inputMode="numeric"
                 aria-invalid={Boolean(formErrors.phone)}
+                maxLength={FIELD_LIMITS.phoneFormatted}
               />
               {formErrors.phone ? <p className="text-sm text-destructive">{formErrors.phone}</p> : null}
             </div>
@@ -275,6 +280,7 @@ export function ProfissionalFormulario() {
                 value={formData.specialty}
                 onChange={(event) => handleChange("specialty", event.target.value)}
                 aria-invalid={Boolean(formErrors.specialty)}
+                maxLength={FIELD_LIMITS.specialty}
               />
               {formErrors.specialty ? (
                 <p className="text-sm text-destructive">{formErrors.specialty}</p>

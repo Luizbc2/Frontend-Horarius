@@ -23,6 +23,13 @@ import type { ProfessionalApiItem } from "../../services/professionals";
 import type { ServiceApiItem } from "../../services/services";
 import type { AppointmentStatus } from "../../types/entities";
 import type { AppointmentDraft, NewAppointmentDraft } from "./timeline-helpers";
+import { formatCpf } from "../../lib/cpf";
+import {
+  FIELD_LIMITS,
+  normalizeEmailInput,
+  normalizeSingleLineTextInput,
+} from "../../lib/field-rules";
+import { formatPhone, normalizePhone } from "../../data/clients";
 
 type AgendaAppointmentDialogsProps = {
   appointmentDraft: AppointmentDraft;
@@ -109,7 +116,7 @@ export function AgendaAppointmentDialogs({
               <div>
                 <p className="text-sm font-semibold text-foreground">Dados opcionais do cliente</p>
                 <p className="text-xs text-muted-foreground">
-                  Preencha se quiser registrar contato e documento junto ao agendamento.
+                  Se nao escolher um cliente existente, preencha nome, e-mail e telefone do novo cadastro.
                 </p>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
@@ -121,14 +128,15 @@ export function AgendaAppointmentDialogs({
                     onChange={(event) =>
                       setNewAppointmentDraft((currentDraft) => ({
                         ...currentDraft,
-                        clientName: event.target.value,
+                        clientName: normalizeSingleLineTextInput(event.target.value, FIELD_LIMITS.clientName),
                       }))
                     }
                     placeholder="Nome do cliente"
+                    maxLength={FIELD_LIMITS.clientName}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="timeline-new-client-email">Email (opcional)</Label>
+                  <Label htmlFor="timeline-new-client-email">Email</Label>
                   <Input
                     id="timeline-new-client-email"
                     type="email"
@@ -136,24 +144,27 @@ export function AgendaAppointmentDialogs({
                     onChange={(event) =>
                       setNewAppointmentDraft((currentDraft) => ({
                         ...currentDraft,
-                        clientEmail: event.target.value,
+                        clientEmail: normalizeEmailInput(event.target.value),
                       }))
                     }
                     placeholder="cliente@email.com"
+                    maxLength={FIELD_LIMITS.email}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="timeline-new-client-phone">Telefone (opcional)</Label>
+                  <Label htmlFor="timeline-new-client-phone">Telefone</Label>
                   <Input
                     id="timeline-new-client-phone"
-                    value={newAppointmentDraft.clientPhone}
+                    value={formatPhone(newAppointmentDraft.clientPhone)}
                     onChange={(event) =>
                       setNewAppointmentDraft((currentDraft) => ({
                         ...currentDraft,
-                        clientPhone: event.target.value,
+                        clientPhone: normalizePhone(event.target.value),
                       }))
                     }
                     placeholder="(00) 00000-0000"
+                    inputMode="numeric"
+                    maxLength={FIELD_LIMITS.phoneFormatted}
                   />
                 </div>
                 <div className="space-y-2">
@@ -164,10 +175,12 @@ export function AgendaAppointmentDialogs({
                     onChange={(event) =>
                       setNewAppointmentDraft((currentDraft) => ({
                         ...currentDraft,
-                        clientCpf: event.target.value,
+                        clientCpf: formatCpf(event.target.value),
                       }))
                     }
                     placeholder="000.000.000-00"
+                    inputMode="numeric"
+                    maxLength={FIELD_LIMITS.cpfFormatted}
                   />
                 </div>
               </div>
@@ -294,13 +307,8 @@ export function AgendaAppointmentDialogs({
               <Input
                 id="timeline-client"
                 value={appointmentDraft.client}
-                onChange={(event) =>
-                  setAppointmentDraft((currentDraft) => ({
-                    ...currentDraft,
-                    client: event.target.value,
-                  }))
-                }
                 placeholder="Nome do cliente"
+                readOnly
               />
             </div>
 
@@ -309,13 +317,8 @@ export function AgendaAppointmentDialogs({
               <Input
                 id="timeline-service"
                 value={appointmentDraft.service}
-                onChange={(event) =>
-                  setAppointmentDraft((currentDraft) => ({
-                    ...currentDraft,
-                    service: event.target.value,
-                  }))
-                }
                 placeholder="Servico agendado"
+                readOnly
               />
             </div>
 

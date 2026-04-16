@@ -8,6 +8,12 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { formatCpf } from "../lib/cpf";
 import {
+  FIELD_LIMITS,
+  normalizeEmailInput,
+  normalizePasswordInput,
+  normalizeSingleLineTextInput,
+} from "../lib/field-rules";
+import {
   createSignupPayload,
   initialSignupFormData,
   mapSignupApiError,
@@ -49,7 +55,14 @@ export function CadastroUsuario() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (field: keyof SignupFormData, value: string) => {
-    const nextValue = field === "cpf" ? formatCpf(value) : value;
+    const nextValue =
+      field === "cpf"
+        ? formatCpf(value)
+        : field === "name"
+          ? normalizeSingleLineTextInput(value, FIELD_LIMITS.userName)
+          : field === "email"
+            ? normalizeEmailInput(value)
+            : normalizePasswordInput(value);
 
     setFormData((currentData) => ({
       ...currentData,
@@ -131,6 +144,7 @@ export function CadastroUsuario() {
                   className="pl-11"
                   autoComplete="name"
                   aria-invalid={Boolean(formErrors.name)}
+                  maxLength={FIELD_LIMITS.userName}
                 />
               </div>
               {formErrors.name ? <p className="text-sm text-destructive">{formErrors.name}</p> : null}
@@ -149,6 +163,7 @@ export function CadastroUsuario() {
                   className="pl-11"
                   autoComplete="email"
                   aria-invalid={Boolean(formErrors.email)}
+                  maxLength={FIELD_LIMITS.email}
                 />
               </div>
               {formErrors.email ? <p className="text-sm text-destructive">{formErrors.email}</p> : null}
@@ -167,6 +182,7 @@ export function CadastroUsuario() {
                   className="pl-11"
                   inputMode="numeric"
                   aria-invalid={Boolean(formErrors.cpf)}
+                  maxLength={FIELD_LIMITS.cpfFormatted}
                 />
               </div>
               {formErrors.cpf ? <p className="text-sm text-destructive">{formErrors.cpf}</p> : null}
@@ -186,6 +202,7 @@ export function CadastroUsuario() {
                     className="pl-11"
                     autoComplete="new-password"
                     aria-invalid={Boolean(formErrors.password)}
+                    maxLength={FIELD_LIMITS.password}
                   />
                 </div>
                 {formErrors.password ? <p className="text-sm text-destructive">{formErrors.password}</p> : null}
@@ -204,6 +221,7 @@ export function CadastroUsuario() {
                     className="pl-11"
                     autoComplete="new-password"
                     aria-invalid={Boolean(formErrors.confirmPassword)}
+                    maxLength={FIELD_LIMITS.password}
                   />
                 </div>
                 {formErrors.confirmPassword ? (

@@ -8,8 +8,15 @@ import { PageShell, SectionCard } from "../components/PageShell";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Textarea } from "../components/ui/textarea";
-import { validateServiceForm, type ServiceFormData, type ServiceFormErrors } from "../data/services";
+import {
+  normalizeServiceField,
+  parseServicePrice,
+  validateServiceForm,
+  type ServiceFormData,
+  type ServiceFormErrors,
+} from "../data/services";
 import { getApiErrorMessage } from "../lib/api-error";
+import { FIELD_LIMITS } from "../lib/field-rules";
 import { createServicesService, type ServiceApiItem } from "../services/services";
 
 const initialFormData: ServiceFormData = {
@@ -99,7 +106,7 @@ export function ServicoFormulario() {
   const handleChange = (field: keyof ServiceFormData, value: string) => {
     setFormData((currentData) => ({
       ...currentData,
-      [field]: value,
+      [field]: normalizeServiceField(field, value),
     }));
 
     setFormErrors((currentErrors) => ({
@@ -136,7 +143,7 @@ export function ServicoFormulario() {
           name: formData.name.trim(),
           category: formData.category.trim(),
           durationMinutes: Number(formData.durationMinutes),
-          price: Number(formData.price.replace(",", ".")),
+          price: parseServicePrice(formData.price),
           description: formData.description.trim(),
         });
 
@@ -158,7 +165,7 @@ export function ServicoFormulario() {
         name: formData.name.trim(),
         category: formData.category.trim(),
         durationMinutes: Number(formData.durationMinutes),
-        price: Number(formData.price.replace(",", ".")),
+        price: parseServicePrice(formData.price),
         description: formData.description.trim(),
       });
 
@@ -223,6 +230,7 @@ export function ServicoFormulario() {
                 value={formData.name}
                 onChange={(event) => handleChange("name", event.target.value)}
                 aria-invalid={Boolean(formErrors.name)}
+                maxLength={FIELD_LIMITS.serviceName}
               />
               {formErrors.name ? <p className="text-sm text-destructive">{formErrors.name}</p> : null}
             </div>
@@ -234,6 +242,7 @@ export function ServicoFormulario() {
                 value={formData.category}
                 onChange={(event) => handleChange("category", event.target.value)}
                 aria-invalid={Boolean(formErrors.category)}
+                maxLength={FIELD_LIMITS.serviceCategory}
               />
               {formErrors.category ? <p className="text-sm text-destructive">{formErrors.category}</p> : null}
             </div>
@@ -242,11 +251,12 @@ export function ServicoFormulario() {
               <label htmlFor="service-duration">Duracao (minutos)</label>
               <Input
                 id="service-duration"
-                type="number"
-                min="1"
+                type="text"
+                inputMode="numeric"
                 value={formData.durationMinutes}
                 onChange={(event) => handleChange("durationMinutes", event.target.value)}
                 aria-invalid={Boolean(formErrors.durationMinutes)}
+                maxLength={FIELD_LIMITS.serviceDurationDigits}
               />
               {formErrors.durationMinutes ? (
                 <p className="text-sm text-destructive">{formErrors.durationMinutes}</p>
@@ -257,12 +267,12 @@ export function ServicoFormulario() {
               <label htmlFor="service-price">Preco</label>
               <Input
                 id="service-price"
-                type="number"
-                step="0.01"
-                min="0"
+                type="text"
+                inputMode="decimal"
                 value={formData.price}
                 onChange={(event) => handleChange("price", event.target.value)}
                 aria-invalid={Boolean(formErrors.price)}
+                maxLength={FIELD_LIMITS.servicePrice}
               />
               {formErrors.price ? <p className="text-sm text-destructive">{formErrors.price}</p> : null}
             </div>
@@ -275,6 +285,7 @@ export function ServicoFormulario() {
                 value={formData.description}
                 onChange={(event) => handleChange("description", event.target.value)}
                 aria-invalid={Boolean(formErrors.description)}
+                maxLength={FIELD_LIMITS.serviceDescription}
               />
               {formErrors.description ? (
                 <p className="text-sm text-destructive">{formErrors.description}</p>

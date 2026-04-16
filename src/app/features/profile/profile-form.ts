@@ -1,4 +1,10 @@
 import { formatCpf, validateCpf } from "../../lib/cpf";
+import {
+  FIELD_LIMITS,
+  normalizePasswordInput,
+  normalizeSingleLineTextInput,
+  validateTextField,
+} from "../../lib/field-rules";
 import type { AuthUser } from "../../lib/auth-storage";
 
 export type ProfileFormData = {
@@ -39,7 +45,17 @@ export function createProfileFormData(user: AuthUser | null): ProfileFormData {
 }
 
 export function formatProfileField(field: keyof ProfileFormData, value: string) {
-  return field === "cpf" ? formatCpf(value) : value;
+  switch (field) {
+    case "name":
+      return normalizeSingleLineTextInput(value, FIELD_LIMITS.profileName);
+    case "cpf":
+      return formatCpf(value);
+    case "password":
+    case "confirmPassword":
+      return normalizePasswordInput(value);
+    default:
+      return value;
+  }
 }
 
 export function validatePasswordStrength(value: string) {
@@ -64,9 +80,14 @@ export function validatePasswordStrength(value: string) {
 
 export function validateProfileForm(formData: ProfileFormData) {
   const errors: ProfileFormErrors = {};
+  const nameError = validateTextField(formData.name, {
+    label: "O nome",
+    maxLength: FIELD_LIMITS.profileName,
+    minLength: 2,
+  });
 
-  if (!formData.name.trim()) {
-    errors.name = "Informe seu nome.";
+  if (nameError) {
+    errors.name = nameError;
   }
 
   if (!formData.email.trim()) {
@@ -81,6 +102,8 @@ export function validateProfileForm(formData: ProfileFormData) {
 
   if (!formData.password.trim()) {
     errors.password = "Informe uma nova senha.";
+  } else if (formData.password.length > FIELD_LIMITS.password) {
+    errors.password = `A senha deve ter no maximo ${FIELD_LIMITS.password} caracteres.`;
   } else {
     const passwordError = validatePasswordStrength(formData.password);
 

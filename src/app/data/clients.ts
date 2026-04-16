@@ -1,14 +1,27 @@
+import { formatCpf, validateCpf } from "../lib/cpf";
+import {
+  FIELD_LIMITS,
+  normalizeDigitsInput,
+  normalizeEmailInput,
+  normalizeMultilineTextInput,
+  normalizeSingleLineTextInput,
+  validateEmailField,
+  validatePhoneField,
+  validateTextField,
+} from "../lib/field-rules";
+
 export type ClientFormData = {
   name: string;
   email: string;
   phone: string;
+  cpf: string;
   notes: string;
 };
 
 export type ClientFormErrors = Partial<Record<keyof ClientFormData, string>>;
 
 export function normalizePhone(value: string) {
-  return value.replace(/\D/g, "").slice(0, 11);
+  return normalizeDigitsInput(value, FIELD_LIMITS.phoneDigits);
 }
 
 export function formatPhone(value: string) {
@@ -29,26 +42,61 @@ export function formatPhone(value: string) {
   return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
 }
 
+export function normalizeClientField(field: keyof ClientFormData, value: string) {
+  switch (field) {
+    case "name":
+      return normalizeSingleLineTextInput(value, FIELD_LIMITS.clientName);
+    case "email":
+      return normalizeEmailInput(value);
+    case "phone":
+      return normalizePhone(value);
+    case "cpf":
+      return formatCpf(value);
+    case "notes":
+      return normalizeMultilineTextInput(value, FIELD_LIMITS.notes);
+    default:
+      return value;
+  }
+}
+
 export function validateClientForm(formData: ClientFormData) {
   const errors: ClientFormErrors = {};
-  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const normalizedCpf = formData.cpf.trim();
+  const nameError = validateTextField(formData.name, {
+    label: "O nome do cliente",
+    maxLength: FIELD_LIMITS.clientName,
+    minLength: 2,
+  });
+  const emailError = validateEmailField(formData.email);
+  const phoneError = validatePhoneField(formData.phone);
+  const notesError = validateTextField(formData.notes, {
+    label: "As observacoes",
+    maxLength: FIELD_LIMITS.notes,
+    minLength: 3,
+  });
 
-  if (!formData.name.trim()) {
-    errors.name = "Informe o nome do cliente.";
+  if (nameError) {
+    errors.name = nameError;
   }
 
-  if (!formData.email.trim()) {
-    errors.email = "Informe o e-mail do cliente.";
-  } else if (!emailPattern.test(formData.email.trim())) {
-    errors.email = "Digite um e-mail valido.";
+  if (emailError) {
+    errors.email = emailError;
   }
 
-  if (normalizePhone(formData.phone).length < 10) {
-    errors.phone = "Digite um telefone valido com DDD.";
+  if (phoneError) {
+    errors.phone = phoneError;
   }
 
-  if (!formData.notes.trim()) {
-    errors.notes = "Escreva uma observacao para o cadastro.";
+  if (notesError) {
+    errors.notes = notesError;
+  }
+
+  if (normalizedCpf && !validateCpf(normalizedCpf)) {
+    errors.cpf = "Digite um CPF valido.";
+  }
+
+  if (normalizedCpf && normalizedCpf.length > FIELD_LIMITS.cpfFormatted) {
+    errors.cpf = `O CPF deve ter no maximo ${FIELD_LIMITS.cpfFormatted} caracteres.`;
   }
 
   return errors;

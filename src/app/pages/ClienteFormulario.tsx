@@ -10,11 +10,12 @@ import { Input } from "../components/ui/input";
 import { Textarea } from "../components/ui/textarea";
 import {
   formatPhone,
-  normalizePhone,
+  normalizeClientField,
   validateClientForm,
   type ClientFormData,
   type ClientFormErrors,
 } from "../data/clients";
+import { FIELD_LIMITS } from "../lib/field-rules";
 import { getApiErrorMessage } from "../lib/api-error";
 import { createClientsService, type ClientApiItem } from "../services/clients";
 
@@ -22,6 +23,7 @@ const initialFormData: ClientFormData = {
   name: "",
   email: "",
   phone: "",
+  cpf: "",
   notes: "",
 };
 
@@ -52,6 +54,7 @@ export function ClienteFormulario() {
       name: existingClient.name,
       email: existingClient.email,
       phone: existingClient.phone,
+      cpf: normalizeClientField("cpf", existingClient.cpf ?? ""),
       notes: existingClient.notes,
     });
   }, [existingClient]);
@@ -103,7 +106,7 @@ export function ClienteFormulario() {
   const handleChange = (field: keyof ClientFormData, value: string) => {
     setFormData((currentData) => ({
       ...currentData,
-      [field]: field === "phone" ? normalizePhone(value) : value,
+      [field]: normalizeClientField(field, value),
     }));
 
     setFormErrors((currentErrors) => ({
@@ -139,6 +142,7 @@ export function ClienteFormulario() {
           name: formData.name.trim(),
           email: formData.email.trim().toLowerCase(),
           phone: formData.phone.trim(),
+          cpf: formData.cpf.trim(),
           notes: formData.notes.trim(),
         });
 
@@ -160,6 +164,7 @@ export function ClienteFormulario() {
         name: formData.name.trim(),
         email: formData.email.trim().toLowerCase(),
         phone: formData.phone.trim(),
+        cpf: formData.cpf.trim(),
         notes: formData.notes.trim(),
       });
 
@@ -224,6 +229,7 @@ export function ClienteFormulario() {
                 value={formData.name}
                 onChange={(event) => handleChange("name", event.target.value)}
                 aria-invalid={Boolean(formErrors.name)}
+                maxLength={FIELD_LIMITS.clientName}
               />
               {formErrors.name ? <p className="text-sm text-destructive">{formErrors.name}</p> : null}
             </div>
@@ -236,11 +242,12 @@ export function ClienteFormulario() {
                 value={formData.email}
                 onChange={(event) => handleChange("email", event.target.value)}
                 aria-invalid={Boolean(formErrors.email)}
+                maxLength={FIELD_LIMITS.email}
               />
               {formErrors.email ? <p className="text-sm text-destructive">{formErrors.email}</p> : null}
             </div>
 
-            <div className="grid gap-2 md:col-span-2">
+            <div className="grid gap-2">
               <label htmlFor="client-phone">Telefone</label>
               <Input
                 id="client-phone"
@@ -248,11 +255,30 @@ export function ClienteFormulario() {
                 onChange={(event) => handleChange("phone", event.target.value)}
                 inputMode="numeric"
                 aria-invalid={Boolean(formErrors.phone)}
+                maxLength={FIELD_LIMITS.phoneFormatted}
               />
               {formErrors.phone ? (
                 <p className="text-sm text-destructive">{formErrors.phone}</p>
               ) : (
                 <p className="text-sm text-muted-foreground">Informe o numero com DDD.</p>
+              )}
+            </div>
+
+            <div className="grid gap-2">
+              <label htmlFor="client-cpf">CPF</label>
+              <Input
+                id="client-cpf"
+                value={formData.cpf}
+                onChange={(event) => handleChange("cpf", event.target.value)}
+                inputMode="numeric"
+                placeholder="000.000.000-00"
+                aria-invalid={Boolean(formErrors.cpf)}
+                maxLength={FIELD_LIMITS.cpfFormatted}
+              />
+              {formErrors.cpf ? (
+                <p className="text-sm text-destructive">{formErrors.cpf}</p>
+              ) : (
+                <p className="text-sm text-muted-foreground">Opcional, mas precisa ser valido se preenchido.</p>
               )}
             </div>
 
@@ -264,6 +290,7 @@ export function ClienteFormulario() {
                 onChange={(event) => handleChange("notes", event.target.value)}
                 rows={4}
                 aria-invalid={Boolean(formErrors.notes)}
+                maxLength={FIELD_LIMITS.notes}
               />
               {formErrors.notes ? <p className="text-sm text-destructive">{formErrors.notes}</p> : null}
             </div>

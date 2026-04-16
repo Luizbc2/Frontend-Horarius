@@ -1,9 +1,8 @@
 import { getApiErrorMessage, isApiErrorWithStatus } from "../../lib/api-error";
 import { normalizeCpf, validateCpf } from "../../lib/cpf";
+import { FIELD_LIMITS, validateEmailField, validateTextField } from "../../lib/field-rules";
 import type { SignupRequest } from "../../services/auth";
 import type { ApiErrorInput } from "../../types/http";
-
-const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export type SignupFormData = {
   name: string;
@@ -33,17 +32,20 @@ export const initialSignupFormData: SignupFormData = {
 export function validateSignupForm(formData: SignupFormData) {
   const errors: SignupFormErrors = {};
   const trimmedName = formData.name.trim();
-  const normalizedEmail = formData.email.trim().toLowerCase();
   const normalizedCpf = normalizeCpf(formData.cpf);
+  const nameError = validateTextField(trimmedName, {
+    label: "O nome",
+    maxLength: FIELD_LIMITS.userName,
+    minLength: 2,
+  });
+  const emailError = validateEmailField(formData.email);
 
-  if (!trimmedName) {
-    errors.name = "Informe seu nome.";
+  if (nameError) {
+    errors.name = nameError;
   }
 
-  if (!normalizedEmail) {
-    errors.email = "Informe seu e-mail.";
-  } else if (!emailPattern.test(normalizedEmail)) {
-    errors.email = "Digite um e-mail valido.";
+  if (emailError) {
+    errors.email = emailError;
   }
 
   if (!normalizedCpf) {
@@ -54,6 +56,8 @@ export function validateSignupForm(formData: SignupFormData) {
 
   if (!formData.password.trim()) {
     errors.password = "Informe uma senha.";
+  } else if (formData.password.length > FIELD_LIMITS.password) {
+    errors.password = `A senha deve ter no maximo ${FIELD_LIMITS.password} caracteres.`;
   }
 
   if (!formData.confirmPassword.trim()) {

@@ -7,8 +7,7 @@ import { AuthShowcasePanel } from "../components/auth/AuthShowcasePanel";
 import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
-
-const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+import { FIELD_LIMITS, normalizeEmailInput, normalizePasswordInput, validateEmailField } from "../lib/field-rules";
 
 type FormErrors = {
   email?: string;
@@ -84,15 +83,20 @@ export function Login() {
 
     const nextErrors: FormErrors = {};
     const normalizedEmail = email.trim().toLowerCase();
-
     if (!normalizedEmail) {
       nextErrors.email = "Informe seu e-mail.";
-    } else if (!emailPattern.test(normalizedEmail)) {
-      nextErrors.email = "Digite um e-mail valido.";
+    } else {
+      const emailError = validateEmailField(normalizedEmail);
+
+      if (emailError) {
+        nextErrors.email = emailError;
+      }
     }
 
     if (!password.trim()) {
       nextErrors.password = "Informe sua senha.";
+    } else if (password.length > FIELD_LIMITS.password) {
+      nextErrors.password = `A senha deve ter no maximo ${FIELD_LIMITS.password} caracteres.`;
     }
 
     if (Object.keys(nextErrors).length > 0) {
@@ -155,11 +159,12 @@ export function Login() {
                   id="login-email"
                   type="email"
                   value={email}
-                  onChange={(event) => setEmail(event.target.value)}
+                  onChange={(event) => setEmail(normalizeEmailInput(event.target.value))}
                   placeholder="voce@empresa.com"
                   className="pl-11"
                   aria-invalid={Boolean(errors.email)}
                   autoComplete="email"
+                  maxLength={FIELD_LIMITS.email}
                 />
               </div>
               {errors.email ? <p className="text-sm text-destructive">{errors.email}</p> : null}
@@ -173,11 +178,12 @@ export function Login() {
                   id="login-password"
                   type="password"
                   value={password}
-                  onChange={(event) => setPassword(event.target.value)}
+                  onChange={(event) => setPassword(normalizePasswordInput(event.target.value))}
                   placeholder="Digite sua senha"
                   className="pl-11"
                   aria-invalid={Boolean(errors.password)}
                   autoComplete="current-password"
+                  maxLength={FIELD_LIMITS.password}
                 />
               </div>
               {errors.password ? <p className="text-sm text-destructive">{errors.password}</p> : null}

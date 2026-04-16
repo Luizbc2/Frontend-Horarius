@@ -1,3 +1,15 @@
+import {
+  FIELD_LIMITS,
+  normalizeCurrencyInput,
+  normalizeMultilineTextInput,
+  normalizePositiveIntegerInput,
+  normalizeSingleLineTextInput,
+  parseCurrencyInput,
+  validateCurrencyField,
+  validatePositiveIntegerField,
+  validateTextField,
+} from "../lib/field-rules";
+
 export type ServiceFormData = {
   name: string;
   category: string;
@@ -15,32 +27,68 @@ export function formatCurrency(value: number) {
   }).format(value);
 }
 
+export function normalizeServiceField(field: keyof ServiceFormData, value: string) {
+  switch (field) {
+    case "name":
+      return normalizeSingleLineTextInput(value, FIELD_LIMITS.serviceName);
+    case "category":
+      return normalizeSingleLineTextInput(value, FIELD_LIMITS.serviceCategory);
+    case "durationMinutes":
+      return normalizePositiveIntegerInput(value, FIELD_LIMITS.serviceDurationDigits);
+    case "price":
+      return normalizeCurrencyInput(value);
+    case "description":
+      return normalizeMultilineTextInput(value, FIELD_LIMITS.serviceDescription);
+    default:
+      return value;
+  }
+}
+
 export function validateServiceForm(formData: ServiceFormData) {
   const errors: ServiceFormErrors = {};
-  const duration = Number(formData.durationMinutes);
-  const price = Number(formData.price.replace(",", "."));
+  const nameError = validateTextField(formData.name, {
+    label: "O nome do servico",
+    maxLength: FIELD_LIMITS.serviceName,
+    minLength: 2,
+  });
+  const categoryError = validateTextField(formData.category, {
+    label: "A categoria",
+    maxLength: FIELD_LIMITS.serviceCategory,
+    minLength: 2,
+  });
+  const durationError = validatePositiveIntegerField(formData.durationMinutes, "A duracao", 1440);
+  const priceError = validateCurrencyField(formData.price, "O preco", 99999.99);
+  const descriptionError = validateTextField(formData.description, {
+    label: "A descricao",
+    maxLength: FIELD_LIMITS.serviceDescription,
+    minLength: 5,
+  });
 
-  if (!formData.name.trim()) {
-    errors.name = "Informe o nome do servico.";
+  if (nameError) {
+    errors.name = nameError;
   }
 
-  if (!formData.category.trim()) {
-    errors.category = "Informe a categoria.";
+  if (categoryError) {
+    errors.category = categoryError;
   }
 
-  if (!Number.isFinite(duration) || duration <= 0) {
-    errors.durationMinutes = "Informe uma duracao valida em minutos.";
+  if (durationError) {
+    errors.durationMinutes = durationError;
   }
 
-  if (!Number.isFinite(price) || price <= 0) {
-    errors.price = "Informe um preco valido.";
+  if (priceError) {
+    errors.price = priceError;
   }
 
-  if (!formData.description.trim()) {
-    errors.description = "Escreva uma descricao curta do servico.";
+  if (descriptionError) {
+    errors.description = descriptionError;
   }
 
   return errors;
+}
+
+export function parseServicePrice(value: string) {
+  return parseCurrencyInput(value);
 }
 
 

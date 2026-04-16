@@ -1,4 +1,13 @@
 import { loadCollection, saveCollection } from "./crudStorage";
+import {
+  FIELD_LIMITS,
+  normalizeEmailInput,
+  normalizeSingleLineTextInput,
+  validateEmailField,
+  validatePhoneField,
+  validateTextField,
+} from "../lib/field-rules";
+import { normalizePhone } from "./clients";
 
 export type ProfessionalStatus = "ativo" | "ferias";
 
@@ -213,25 +222,49 @@ export function validateProfessionalWorkDays(workDays: ProfessionalWorkDay[]) {
 
 export function validateProfessionalForm(formData: ProfessionalFormData) {
   const errors: ProfessionalFormErrors = {};
-  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const nameError = validateTextField(formData.name, {
+    label: "O nome do profissional",
+    maxLength: FIELD_LIMITS.professionalName,
+    minLength: 2,
+  });
+  const emailError = validateEmailField(formData.email);
+  const phoneError = validatePhoneField(formData.phone);
+  const specialtyError = validateTextField(formData.specialty, {
+    label: "A especialidade",
+    maxLength: FIELD_LIMITS.specialty,
+    minLength: 2,
+  });
 
-  if (!formData.name.trim()) {
-    errors.name = "Informe o nome do profissional.";
+  if (nameError) {
+    errors.name = nameError;
   }
 
-  if (!formData.email.trim()) {
-    errors.email = "Informe o e-mail.";
-  } else if (!emailPattern.test(formData.email.trim())) {
-    errors.email = "Digite um e-mail valido.";
+  if (emailError) {
+    errors.email = emailError;
   }
 
-  if (formData.phone.replace(/\D/g, "").length < 10) {
-    errors.phone = "Digite um telefone valido com DDD.";
+  if (phoneError) {
+    errors.phone = phoneError;
   }
 
-  if (!formData.specialty.trim()) {
-    errors.specialty = "Informe a especialidade principal.";
+  if (specialtyError) {
+    errors.specialty = specialtyError;
   }
 
   return errors;
+}
+
+export function normalizeProfessionalField(field: keyof ProfessionalFormData, value: string) {
+  switch (field) {
+    case "name":
+      return normalizeSingleLineTextInput(value, FIELD_LIMITS.professionalName);
+    case "email":
+      return normalizeEmailInput(value);
+    case "phone":
+      return normalizePhone(value);
+    case "specialty":
+      return normalizeSingleLineTextInput(value, FIELD_LIMITS.specialty);
+    default:
+      return value;
+  }
 }

@@ -2,6 +2,7 @@ import { CreditCard } from "lucide-react";
 
 import { SectionCard } from "../PageShell";
 import { Input } from "../ui/input";
+import { FIELD_LIMITS } from "../../lib/field-rules";
 
 type ProfileIdentitySectionProps = {
   name: string;
@@ -33,6 +34,7 @@ export function ProfileIdentitySection({
             value={name}
             onChange={(event) => onChange("name", event.target.value)}
             aria-invalid={Boolean(nameError)}
+            maxLength={FIELD_LIMITS.profileName}
           />
           {nameError ? (
             <p className="min-h-[1.25rem] text-sm text-destructive">{nameError}</p>
@@ -64,6 +66,7 @@ export function ProfileIdentitySection({
               inputMode="numeric"
               placeholder="000.000.000-00"
               aria-invalid={Boolean(cpfError)}
+              maxLength={FIELD_LIMITS.cpfFormatted}
             />
           </div>
           {cpfError ? (

@@ -1,5 +1,13 @@
 import type { CreateAppointmentRequest, UpdateAppointmentRequest } from "../../services/appointments";
 import type { CreateClientRequest } from "../../services/clients";
+import { normalizeCpf, validateCpf } from "../../lib/cpf";
+import {
+  FIELD_LIMITS,
+  validateEmailField,
+  validatePhoneField,
+  validateTextField,
+} from "../../lib/field-rules";
+import { normalizePhone } from "../../data/clients";
 import {
   APPOINTMENT_DURATION_IN_MINUTES,
   buildScheduledAt,
@@ -49,8 +57,35 @@ export function validateTimelineCreateDraft(
     return "Selecione servico e profissional.";
   }
 
+  if (!Number(draft.clientId)) {
+    const nameError = validateTextField(draft.clientName, {
+      label: "O nome do cliente",
+      maxLength: FIELD_LIMITS.clientName,
+      minLength: 2,
+    });
+    const emailError = validateEmailField(draft.clientEmail);
+    const phoneError = validatePhoneField(draft.clientPhone);
+    const normalizedCpf = normalizeCpf(draft.clientCpf);
+
+    if (nameError) {
+      return nameError;
+    }
+
+    if (emailError) {
+      return emailError;
+    }
+
+    if (phoneError) {
+      return phoneError;
+    }
+
+    if (normalizedCpf && !validateCpf(normalizedCpf)) {
+      return "Digite um CPF valido.";
+    }
+  }
+
   if (!Number(draft.clientId) && !draft.clientName.trim()) {
-    return "Informe o nome do cliente ou selecione um cliente existente.";
+    return "Informe os dados do novo cliente ou selecione um cadastro existente.";
   }
 
   if (hasTimelineSlotConflict({ appointments, slot: { professionalId: String(professionalId), time: draft.time } })) {
@@ -88,9 +123,9 @@ export function validateTimelineEditDraft(
 export function buildCreateClientPayload(draft: NewAppointmentDraft): CreateClientRequest {
   return {
     name: draft.clientName.trim(),
-    email: draft.clientEmail.trim(),
-    phone: draft.clientPhone.trim(),
-    cpf: draft.clientCpf.trim(),
+    email: draft.clientEmail.trim().toLowerCase(),
+    phone: normalizePhone(draft.clientPhone),
+    cpf: normalizeCpf(draft.clientCpf),
     notes: "",
   };
 }

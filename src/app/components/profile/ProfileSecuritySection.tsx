@@ -2,6 +2,7 @@ import { LockKeyhole } from "lucide-react";
 
 import { SectionCard } from "../PageShell";
 import { Input } from "../ui/input";
+import { FIELD_LIMITS } from "../../lib/field-rules";
 
 type ProfileSecuritySectionProps = {
   password: string;
@@ -37,6 +38,7 @@ export function ProfileSecuritySection({
               placeholder="Use 8+ caracteres, maiuscula e numero"
               autoComplete="new-password"
               aria-invalid={Boolean(passwordError)}
+              maxLength={FIELD_LIMITS.password}
             />
           </div>
           {passwordError ? (
@@ -61,6 +63,7 @@ export function ProfileSecuritySection({
               placeholder="Repita exatamente a nova senha"
               autoComplete="new-password"
               aria-invalid={Boolean(confirmPasswordError)}
+              maxLength={FIELD_LIMITS.password}
             />
           </div>
           {confirmPasswordError ? (
