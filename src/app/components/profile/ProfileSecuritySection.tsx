@@ -20,7 +20,7 @@ export function ProfileSecuritySection({
 }: ProfileSecuritySectionProps) {
   return (
     <SectionCard
-      title="Segurança"
+      title="Seguranca"
       description="Digite a nova senha e repita o mesmo valor no campo ao lado."
     >
       <div className="grid gap-4 md:grid-cols-2">
@@ -34,7 +34,7 @@ export function ProfileSecuritySection({
               value={password}
               onChange={(event) => onChange("password", event.target.value)}
               className="pl-11"
-              placeholder="Use 8+ caracteres, maiúscula e número"
+              placeholder="Use 8+ caracteres, maiuscula e numero"
               autoComplete="new-password"
               aria-invalid={Boolean(passwordError)}
             />
@@ -43,7 +43,7 @@ export function ProfileSecuritySection({
             <p className="min-h-[1.25rem] text-sm text-destructive">{passwordError}</p>
           ) : (
             <p className="min-h-[1.25rem] text-sm text-muted-foreground">
-              Use 8 ou mais caracteres, com letra maiúscula, minúscula e número.
+              Use 8 ou mais caracteres, com letra maiuscula, minuscula e numero.
             </p>
           )}
         </div>

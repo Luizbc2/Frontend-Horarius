@@ -6,28 +6,17 @@ import { AuthShowcasePanel } from "../components/auth/AuthShowcasePanel";
 import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
-import { getApiErrorMessage, isApiErrorWithStatus } from "../lib/api-error";
+import { formatCpf } from "../lib/cpf";
+import {
+  createSignupPayload,
+  initialSignupFormData,
+  mapSignupApiError,
+  mapSignupSuccessMessage,
+  type SignupFormData,
+  type SignupFormErrors,
+  validateSignupForm,
+} from "../features/auth/signup-form";
 import { signupWithApi } from "../services/auth";
-import type { ApiErrorInput } from "../types/http";
-
-const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-type SignupFormData = {
-  name: string;
-  email: string;
-  cpf: string;
-  password: string;
-  confirmPassword: string;
-};
-
-type SignupFormErrors = {
-  name?: string;
-  email?: string;
-  cpf?: string;
-  password?: string;
-  confirmPassword?: string;
-  submit?: string;
-};
 
 const signupFeatures = [
   {
@@ -53,149 +42,9 @@ const signupFeatures = [
   },
 ];
 
-const initialFormData: SignupFormData = {
-  name: "",
-  email: "",
-  cpf: "",
-  password: "",
-  confirmPassword: "",
-};
-
-function normalizeCpf(value: string) {
-  return value.replace(/\D/g, "").slice(0, 11);
-}
-
-function formatCpf(value: string) {
-  const digits = normalizeCpf(value);
-
-  if (digits.length <= 3) {
-    return digits;
-  }
-
-  if (digits.length <= 6) {
-    return `${digits.slice(0, 3)}.${digits.slice(3)}`;
-  }
-
-  if (digits.length <= 9) {
-    return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
-  }
-
-  return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
-}
-
-function validateCpf(value: string) {
-  const digits = normalizeCpf(value);
-
-  if (digits.length !== 11 || /^(\d)\1+$/.test(digits)) {
-    return false;
-  }
-
-  const numbers = digits.split("").map(Number);
-
-  const firstCheck = numbers
-    .slice(0, 9)
-    .reduce((total, digit, index) => total + digit * (10 - index), 0);
-  const firstRemainder = (firstCheck * 10) % 11;
-  const firstDigit = firstRemainder === 10 ? 0 : firstRemainder;
-
-  if (firstDigit !== numbers[9]) {
-    return false;
-  }
-
-  const secondCheck = numbers
-    .slice(0, 10)
-    .reduce((total, digit, index) => total + digit * (11 - index), 0);
-  const secondRemainder = (secondCheck * 10) % 11;
-  const secondDigit = secondRemainder === 10 ? 0 : secondRemainder;
-
-  return secondDigit === numbers[10];
-}
-
-function validateSignupForm(formData: SignupFormData) {
-  const errors: SignupFormErrors = {};
-  const trimmedName = formData.name.trim();
-  const normalizedEmail = formData.email.trim().toLowerCase();
-  const normalizedCpf = normalizeCpf(formData.cpf);
-
-  if (!trimmedName) {
-    errors.name = "Informe seu nome.";
-  }
-
-  if (!normalizedEmail) {
-    errors.email = "Informe seu e-mail.";
-  } else if (!emailPattern.test(normalizedEmail)) {
-    errors.email = "Digite um e-mail valido.";
-  }
-
-  if (!normalizedCpf) {
-    errors.cpf = "Informe seu CPF.";
-  } else if (!validateCpf(normalizedCpf)) {
-    errors.cpf = "Digite um CPF valido.";
-  }
-
-  if (!formData.password.trim()) {
-    errors.password = "Informe uma senha.";
-  }
-
-  if (!formData.confirmPassword.trim()) {
-    errors.confirmPassword = "Repita sua senha.";
-  } else if (formData.password !== formData.confirmPassword) {
-    errors.confirmPassword = "As senhas precisam ser iguais.";
-  }
-
-  if (Object.keys(errors).length > 0) {
-    errors.submit = "Revise os campos destacados antes de continuar.";
-  }
-
-  return errors;
-}
-
-function mapSignupSuccessMessage(message: string) {
-  if (message === "Usuario cadastrado com sucesso.") {
-    return "Conta criada com sucesso. Agora voce ja pode entrar no painel.";
-  }
-
-  return message;
-}
-
-function mapSignupApiError(error: ApiErrorInput): SignupFormErrors {
-  const message = getApiErrorMessage(error, "Nao foi possivel concluir o cadastro agora.");
-
-  if (isApiErrorWithStatus(error, 409) && message === "E-mail ja esta em uso.") {
-    return {
-      email: "Este e-mail ja esta em uso.",
-      submit: "Use outro e-mail para continuar.",
-    };
-  }
-
-  if (isApiErrorWithStatus(error, 409) && message === "CPF ja esta em uso.") {
-    return {
-      cpf: "Este CPF ja esta em uso.",
-      submit: "Revise o CPF informado para continuar.",
-    };
-  }
-
-  switch (message) {
-    case "Formato de e-mail invalido.":
-      return {
-        email: "Digite um e-mail valido.",
-        submit: "Revise os campos destacados antes de continuar.",
-      };
-    case "CPF invalido.":
-      return {
-        cpf: "Digite um CPF valido.",
-        submit: "Revise os campos destacados antes de continuar.",
-      };
-    default:
-      return {
-        submit: message,
-      };
-  }
-}
-
 export function CadastroUsuario() {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState<SignupFormData>(initialFormData);
+  const [formData, setFormData] = useState<SignupFormData>(initialSignupFormData);
   const [formErrors, setFormErrors] = useState<SignupFormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -227,15 +76,8 @@ export function CadastroUsuario() {
     setIsSubmitting(true);
     setFormErrors({});
 
-    const signupPayload = {
-      name: formData.name.trim(),
-      email: formData.email.trim().toLowerCase(),
-      cpf: normalizeCpf(formData.cpf),
-      password: formData.password,
-    };
-
     try {
-      const response = await signupWithApi(signupPayload);
+      const response = await signupWithApi(createSignupPayload(formData));
 
       navigate("/login", {
         replace: true,
