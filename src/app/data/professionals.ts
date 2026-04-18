@@ -60,6 +60,10 @@ export type ProfessionalBaseData = {
 
 export const PROFESSIONALS_STORAGE_KEY = "horarius:profissionais";
 
+function getProfessionalsStorageKey(userId: number) {
+  return `${PROFESSIONALS_STORAGE_KEY}:${userId}`;
+}
+
 export const WEEK_DAYS: WeekDayKey[] = [
   "domingo",
   "segunda",
@@ -105,14 +109,14 @@ function normalizeProfessional(professional: Partial<Professional> & { id: numbe
   } satisfies Professional;
 }
 
-export function loadProfessionals() {
-  return loadCollection(PROFESSIONALS_STORAGE_KEY, initialProfessionals).map((professional) =>
+export function loadProfessionals(userId: number) {
+  return loadCollection(getProfessionalsStorageKey(userId), initialProfessionals).map((professional) =>
     normalizeProfessional(professional),
   );
 }
 
-export function syncProfessionalsBaseData(professionals: ProfessionalBaseData[]) {
-  const currentProfessionals = loadProfessionals();
+export function syncProfessionalsBaseData(userId: number, professionals: ProfessionalBaseData[]) {
+  const currentProfessionals = loadProfessionals(userId);
   const currentProfessionalsById = new Map(
     currentProfessionals.map((professional) => [professional.id, professional]),
   );
@@ -126,17 +130,17 @@ export function syncProfessionalsBaseData(professionals: ProfessionalBaseData[])
     });
   });
 
-  saveCollection(PROFESSIONALS_STORAGE_KEY, nextProfessionals);
+  saveCollection(getProfessionalsStorageKey(userId), nextProfessionals);
 
   return nextProfessionals;
 }
 
-export function getProfessionalById(professionalId: number) {
-  return loadProfessionals().find((professional) => professional.id === professionalId) ?? null;
+export function getProfessionalById(userId: number, professionalId: number) {
+  return loadProfessionals(userId).find((professional) => professional.id === professionalId) ?? null;
 }
 
-export function updateProfessional(professionalId: number, formData: ProfessionalFormData) {
-  const nextProfessionals = loadProfessionals().map((professional) =>
+export function updateProfessional(userId: number, professionalId: number, formData: ProfessionalFormData) {
+  const nextProfessionals = loadProfessionals(userId).map((professional) =>
     professional.id === professionalId
       ? {
           ...professional,
@@ -149,11 +153,15 @@ export function updateProfessional(professionalId: number, formData: Professiona
       : professional,
   );
 
-  saveCollection(PROFESSIONALS_STORAGE_KEY, nextProfessionals);
+  saveCollection(getProfessionalsStorageKey(userId), nextProfessionals);
 }
 
-export function updateProfessionalWorkDays(professionalId: number, workDays: ProfessionalWorkDay[]) {
-  const nextProfessionals = loadProfessionals().map((professional) =>
+export function updateProfessionalWorkDays(
+  userId: number,
+  professionalId: number,
+  workDays: ProfessionalWorkDay[],
+) {
+  const nextProfessionals = loadProfessionals(userId).map((professional) =>
     professional.id === professionalId
       ? {
           ...professional,
@@ -168,7 +176,7 @@ export function updateProfessionalWorkDays(professionalId: number, workDays: Pro
       : professional,
   );
 
-  saveCollection(PROFESSIONALS_STORAGE_KEY, nextProfessionals);
+  saveCollection(getProfessionalsStorageKey(userId), nextProfessionals);
 }
 
 export function getActiveWorkDaysCount(professional: Pick<Professional, "workDays">) {

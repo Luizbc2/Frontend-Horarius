@@ -29,7 +29,7 @@ type LoadProfessionalsRequest = {
 };
 
 export function Profissionais() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const location = useLocation();
   const [professionals, setProfessionals] = useState<Professional[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -58,7 +58,7 @@ export function Profissionais() {
         search,
       });
 
-      const syncedProfessionals = syncProfessionalsBaseData(response.data);
+      const syncedProfessionals = syncProfessionalsBaseData(user.id, response.data);
 
       setProfessionals(syncedProfessionals);
       setCurrentPage(response.page);
@@ -86,7 +86,7 @@ export function Profissionais() {
   }, [searchTerm]);
 
   useEffect(() => {
-    if (!token) {
+    if (!token || !user) {
       setProfessionals([]);
       setTotalItems(0);
       setTotalPages(1);
@@ -124,7 +124,7 @@ export function Profissionais() {
     return () => {
       isMounted = false;
     };
-  }, [currentPage, searchTerm, token]);
+  }, [currentPage, searchTerm, token, user]);
 
   const activeCount = professionals.filter((professional) => professional.status === "ativo").length;
   const configuredScheduleCount = professionals.filter(

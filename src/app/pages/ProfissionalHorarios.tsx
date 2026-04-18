@@ -31,13 +31,13 @@ import { getApiErrorMessage } from "../lib/api-error";
 import { createProfessionalsService, type ProfessionalApiItem } from "../services/professionals";
 
 export function ProfissionalHorarios() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const navigate = useNavigate();
   const params = useParams();
   const professionalId = params.professionalId ? Number(params.professionalId) : null;
   const cachedProfessional = useMemo(
-    () => (professionalId === null ? null : getProfessionalById(professionalId)),
-    [professionalId],
+    () => (professionalId === null || !user ? null : getProfessionalById(user.id, professionalId)),
+    [professionalId, user],
   );
   const initialWorkDays = createInitialWorkDays(cachedProfessional);
   const [professional, setProfessional] = useState<ProfessionalApiItem | null>(
@@ -56,7 +56,7 @@ export function ProfissionalHorarios() {
   }
 
   useEffect(() => {
-    if (!token) {
+    if (!token || !user) {
       setIsLoading(false);
       setErrorMessage("Sua sessão expirou. Entre novamente para continuar.");
       return;
@@ -98,7 +98,7 @@ export function ProfissionalHorarios() {
     return () => {
       isMounted = false;
     };
-  }, [professionalId, token]);
+  }, [professionalId, token, user]);
 
   if (!professional && !isLoading) {
     return <Navigate to="/profissionais" replace />;
@@ -143,7 +143,7 @@ export function ProfissionalHorarios() {
       return;
     }
 
-    if (!token) {
+    if (!token || !user) {
       setErrorMessage("Sua sessão expirou. Entre novamente para continuar.");
       return;
     }
@@ -170,7 +170,7 @@ export function ProfissionalHorarios() {
         })),
       );
 
-      updateProfessionalWorkDays(professional.id, mapWorkDaysFromApi(response.workDays));
+      updateProfessionalWorkDays(user.id, professional.id, mapWorkDaysFromApi(response.workDays));
 
       navigate("/profissionais", {
         replace: true,

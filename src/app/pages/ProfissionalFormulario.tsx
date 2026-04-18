@@ -36,7 +36,7 @@ const initialFormData: ProfessionalFormData = {
 };
 
 export function ProfissionalFormulario() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const params = useParams();
@@ -138,7 +138,7 @@ export function ProfissionalFormulario() {
       return;
     }
 
-    if (!token) {
+    if (!token || !user) {
       setSubmitError("Sua sessão expirou. Entre novamente para continuar.");
       return;
     }
@@ -157,7 +157,7 @@ export function ProfissionalFormulario() {
           status: formData.status,
         });
 
-        updateProfessional(professionalId, formData);
+        updateProfessional(user.id, professionalId, formData);
 
         navigate("/profissionais", {
           replace: true,
